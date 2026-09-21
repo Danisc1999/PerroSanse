@@ -1,0 +1,16 @@
+{
+  "name": "Perro Sanse F.C.",
+  "short_name": "Perro Sanse",
+  "description": "Convocatorias, alineaciones, estadísticas y MVP del Perro Sanse F.C.",
+  "lang": "es",
+  "start_url": "./Perro%20Sanse%20FC.dc.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#08080A",
+  "theme_color": "#08080A",
+  "icons": [
+    { "src": "uploads/Escudo.jpg", "sizes": "192x192", "type": "image/jpeg", "purpose": "any" },
+    { "src": "uploads/Escudo.jpg", "sizes": "512x512", "type": "image/jpeg", "purpose": "any" }
+  ]
+}
