@@ -1,0 +1,5 @@
+{
+  "rewrites": [
+    { "source": "/", "destination": "/Perro%20Sanse%20FC.dc.html" }
+  ]
+}
