@@ -372,6 +372,7 @@
           <sc-for list="{{ topGoles }}" as="p" hint-placeholder-count="4">
             <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #1C1C22">
               <div style="width:26px;font-family:'Anton',sans-serif;color:#FF2E88">{{ p.pos }}</div>
+              <div style="{{ p.avatarStyle }}">{{ p.iniciales }}</div>
               <div style="flex:1">{{ p.nombre }}</div>
               <div style="font-family:'Anton',sans-serif;font-size:20px">{{ p.goles }}</div>
             </div>
@@ -382,6 +383,7 @@
           <sc-for list="{{ topAsis }}" as="p" hint-placeholder-count="4">
             <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #1C1C22">
               <div style="width:26px;font-family:'Anton',sans-serif;color:#2FA8A0">{{ p.pos }}</div>
+              <div style="{{ p.avatarStyle }}">{{ p.iniciales }}</div>
               <div style="flex:1">{{ p.nombre }}</div>
               <div style="font-family:'Anton',sans-serif;font-size:20px">{{ p.asis }}</div>
             </div>
@@ -2940,7 +2942,7 @@ class Component extends DCLogic {
     orden:'goles', vistaStats:'tabla', jugadorSel:null, compClave:'goles', votoPorJornada:{}, notas:[], misNotas:{}, vistaConv:'fotos', vistaMvp:'votacion',
     calVista:'lista', calMes:'todos', calJornada:'todas', rivalNum:null,
     actaSel:null, actaAbierta:null,
-    postTipo:'aviso', postTitulo:'', postTexto:'', postFoto:'', avisoFeed:'', borradores:{}, editandoPost:null, borradorPost:null,
+    postTipo:'aviso', postTitulo:'', postTexto:'', postFoto:'', avisoFeed:'', borradores:{}, editandoPost:null, borradorPost:null, misReacciones:{},
     tipoCartel:'fichaje', protagonista:7, cartelFormato:'4:5 (feed vertical)', cartelExtra:'', copiado:false
   };
 
@@ -4286,8 +4288,8 @@ class Component extends DCLogic {
       asisTotales: (st.contadores || {}).asis != null ? st.contadores.asis : activos.reduce((s, p) => s + p.asis, 0),
       flechaLiga: flecha(miEquipo.pos_ant, TABLA_LIGA.indexOf(miEquipo) + 1).icono,
       flechaLigaStyle: 'font-size:18px;margin-left:8px;color:' + flecha(miEquipo.pos_ant, TABLA_LIGA.indexOf(miEquipo) + 1).color,
-      topGoles: [...activos].sort((a, b) => b.goles - a.goles).slice(0, 4).map((p, i) => ({ pos:i + 1, nombre:p.nombre, goles:p.goles })),
-      topAsis: [...activos].sort((a, b) => b.asis - a.asis).slice(0, 4).map((p, i) => ({ pos:i + 1, nombre:p.nombre, asis:p.asis })),
+      topGoles: [...activos].sort((a, b) => b.goles - a.goles).slice(0, 4).map((p, i) => ({ pos:i + 1, nombre:p.nombre, goles:p.goles, iniciales: p.foto ? '' : iniciales(p.nombre), avatarStyle: this.avatar(p, 30) })),
+      topAsis: [...activos].sort((a, b) => b.asis - a.asis).slice(0, 4).map((p, i) => ({ pos:i + 1, nombre:p.nombre, asis:p.asis, iniciales: p.foto ? '' : iniciales(p.nombre), avatarStyle: this.avatar(p, 30) })),
       avisos: st.avisos,
 
       popupAbierto: st.popup && esJugador && !st.forzarPass,
@@ -4373,13 +4375,37 @@ class Component extends DCLogic {
           tituloSobreFoto:"font-family:'Anton',sans-serif;font-size:34px;line-height:1.02;text-transform:uppercase;color:#fff;text-shadow:0 3px 18px rgba(0,0,0,.9)",
           tipoPill:'width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;background:' + t[3] + '22;border:1px solid ' + t[3],
           heroStyle:'padding:26px 18px;background:linear-gradient(135deg,' + t[3] + '33,#0C0C10);border-top:1px solid #1C1C22;border-bottom:1px solid #1C1C22',
-          like: () => { const n = p.misLikes ? p.likes - 1 : p.likes + 1; this.patchPost(p.id, { likes:n, misLikes:!p.misLikes }); this.bk.reaccionar(p.id, n, p.reacciones); },
+          like: () => {
+            const n = p.misLikes ? p.likes - 1 : p.likes + 1;
+            const antes = { likes:p.likes, misLikes:p.misLikes };
+            this.patchPost(p.id, { likes:n, misLikes:!p.misLikes });
+            this.bk.reaccionar(p.id, n, p.reacciones).then(r => {
+              if (!r.ok) { this.patchPost(p.id, antes); this.setState({ avisoGuardado:'No se pudo guardar el like: ' + r.error }); }
+            });
+          },
           likeStyle:'padding:8px 14px;border-radius:999px;cursor:pointer;font-weight:700;font-size:14px;border:1px solid ' + (p.misLikes ? ac : '#33333D') + ';background:' + (p.misLikes ? ac : 'transparent') + ';color:' + (p.misLikes ? '#0B0B0D' : '#C9C9D2'),
-          reacciones: Object.keys(p.reacciones).map(em => ({
-            emoji:em, n:p.reacciones[em],
-            go: () => { const r = Object.assign({}, p.reacciones, { [em]:p.reacciones[em] + 1 }); this.patchPost(p.id, { reacciones:r }); this.bk.reaccionar(p.id, p.likes, r); },
-            style:'padding:8px 12px;border-radius:999px;cursor:pointer;font-size:14px;border:1px solid #33333D;background:#16161C;color:#C9C9D2'
-          })),
+          reacciones: Object.keys(p.reacciones).map(em => {
+            const yaPuesta = !!(st.misReacciones[p.id] || {})[em];
+            return {
+              emoji:em, n:p.reacciones[em], puesta:yaPuesta,
+              go: () => {
+                const delta = yaPuesta ? -1 : 1;
+                const r = Object.assign({}, p.reacciones, { [em]: Math.max(0, p.reacciones[em] + delta) });
+                const antesR = p.reacciones, antesMis = st.misReacciones;
+                this.patchPost(p.id, { reacciones:r });
+                this.setState(s => ({ misReacciones: Object.assign({}, s.misReacciones, {
+                  [p.id]: Object.assign({}, s.misReacciones[p.id], { [em]: !yaPuesta })
+                }) }));
+                this.bk.reaccionar(p.id, p.likes, r).then(res => {
+                  if (!res.ok) {
+                    this.patchPost(p.id, { reacciones:antesR });
+                    this.setState({ misReacciones:antesMis, avisoGuardado:'No se pudo guardar la reacción: ' + res.error });
+                  }
+                });
+              },
+              style:'padding:8px 12px;border-radius:999px;cursor:pointer;font-size:14px;border:1px solid ' + (yaPuesta ? ac : '#33333D') + ';background:' + (yaPuesta ? ac + '22' : '#16161C') + ';color:' + (yaPuesta ? ac : '#C9C9D2')
+            };
+          }),
           comentarios: p.comentarios.map(c => {
             const jp = JUG.find(x => x.nombre === c.autor);
             return { autor:c.autor, texto:c.texto, iniciales: jp && jp.foto ? '' : iniciales(c.autor), avatarStyle:this.avatar(jp, 30) };

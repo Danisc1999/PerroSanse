@@ -713,7 +713,13 @@ export async function comentar(publicacionId, autor, texto) {
 }
 
 export async function reaccionar(publicacionId, likes, reacciones) {
-  await sb.from('publicaciones').update({ likes, reacciones }).eq('id', publicacionId);
+  // Solo el míster puede escribir en «publicaciones» directamente (política
+  // admin_publica). Jugadores y fans pasan por esta función seguridad-definer,
+  // que solo toca likes/reacciones y nada más de la fila.
+  const { error } = await sb.rpc('reaccionar_publicacion', {
+    p_id: publicacionId, p_likes: likes, p_reacciones: reacciones
+  });
+  return error ? { ok: false, error: error.message } : { ok: true };
 }
 
 /* La app llamaba a esto cuando los datos vivían en el navegador.
