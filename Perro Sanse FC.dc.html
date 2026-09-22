@@ -25,7 +25,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  html, body { margin:0; padding:0; background:#08080A; }
+  html, body { margin:0; padding:0; background:#08080A; overflow-x:hidden; }
   body { font-family:'Barlow', system-ui, sans-serif; -webkit-font-smoothing:antialiased; }
   a { color:#FF2E88; text-decoration:none; }
   a:hover { color:#FF6FAC; }
@@ -142,7 +142,7 @@
   }
 </style>
 </helmet>
-<div style="min-height:100vh;background:#08080A;color:#F2F0EC;background-image:radial-gradient(1100px 500px at 85% -10%, rgba(255,46,136,.16), transparent 60%),radial-gradient(700px 400px at 0% 100%, rgba(47,168,160,.10), transparent 60%)">
+<div style="min-height:100vh;overflow-x:hidden;background:#08080A;color:#F2F0EC;background-image:radial-gradient(1100px 500px at 85% -10%, rgba(255,46,136,.16), transparent 60%),radial-gradient(700px 400px at 0% 100%, rgba(47,168,160,.10), transparent 60%)">
 
   <sc-if value="{{ esLogin }}" hint-placeholder-val="{{ true }}">
     <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px">
@@ -3035,13 +3035,17 @@ class Component extends DCLogic {
 
   componentDidUpdate() { this.persistir(); }
 
-  persistir() {
+  /** Guarda ya, sin esperar el medio segundo de margen. Para acciones
+   *  puntuales (como marcar un favorito) que se pierden si el usuario
+   *  cierra la app justo después de tocar el botón. */
+  guardarYa() { clearTimeout(this._t); this._t = null; this.persistir(true); }
+
+  persistir(inmediato) {
     // No se escribe nada hasta que la primera carga del servidor haya
     // terminado: si no, los valores en blanco del arranque se guardarían
     // encima de los datos reales.
     if (!this.bk || !this.state.loggedIn || this._cargando || !this._cargado) return;
-    clearTimeout(this._t);
-    this._t = setTimeout(async () => {
+    const hacerGuardado = async () => {
       const s = this.state;
       const r = await this.bk.guardar({
         jugadores:s.jugadores, campos:s.campos, partidos:s.partidos, actas:s.actas,
@@ -3057,7 +3061,10 @@ class Component extends DCLogic {
       if (r && r.ok === false) {
         this.setState({ avisoGuardado: r.error || 'No se pudo guardar en el servidor.' });
       }
-    }, 700);
+    };
+    if (inmediato) { hacerGuardado(); return; }
+    clearTimeout(this._t);
+    this._t = setTimeout(hacerGuardado, 700);
   }
 
   /** La tabla de la liga está vacía en el servidor: la crea con los
@@ -4423,7 +4430,7 @@ class Component extends DCLogic {
             this.setState(s => ({
               favoritos: Object.assign({}, s.favoritos, { [claveFav]: sigo ? misFavs.filter(x => x !== p.id) : misFavs.concat([p.id]) }),
               jugadores: s.jugadores.map(j => j.id === p.id ? Object.assign({}, j, { fans: j.fans + (sigo ? -1 : 1) }) : j)
-            }));
+            }), () => this.guardarYa());
           },
           favStyle:'margin-left:auto;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;border:1px solid ' + (sigo ? ac : '#33333D') + ';background:' + (sigo ? ac : 'transparent') + ';color:' + (sigo ? '#0B0B0D' : '#8A8A96'),
           cardStyle:'background:#101014;border:1px solid ' + (p.estado === 'baja' ? '#2A1620' : '#26262E') + ';border-left:4px solid ' + (estado === 'lesionado' ? ESTADOS.lesionado.color : POS_COLOR[p.pos])
