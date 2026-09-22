@@ -2850,14 +2850,14 @@ function rejilla(maximo, pasos, formato) {
   return lineas;
 }
 
-function iniciales(n) { return n.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase(); }
+function iniciales(n) { return (n || '').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase(); }
 /** Iniciales de equipo: si dos empiezan igual, se añade una letra más
  *  para poder distinguirlos sin depender del color. */
 function siglaEquipo(nombre, todos) {
   const base = iniciales(nombre);
   const choca = (todos || []).some(o => o !== nombre && iniciales(o) === base);
   if (!choca) return base;
-  const palabras = nombre.split(' ').filter(Boolean);
+  const palabras = (nombre || '').split(' ').filter(Boolean);
   const larga = palabras[palabras.length - 1] || nombre;
   return (base + larga.slice(0, 1)).toUpperCase().slice(0, 3);
 }
