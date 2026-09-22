@@ -3047,7 +3047,7 @@ class Component extends DCLogic {
     if (!this.bk || !this.state.loggedIn || this._cargando || !this._cargado) return;
     const hacerGuardado = async () => {
       const s = this.state;
-      const r = await this.bk.guardar({
+      this._enGuardado = this.bk.guardar({
         jugadores:s.jugadores, campos:s.campos, partidos:s.partidos, actas:s.actas,
         avisos:s.avisos, clasificacion:s.clasificacion, multas:s.multas, pagos:s.pagos, sugerencias:s.sugerencias, visibilidad:s.visibilidad, economia:s.economia, jornadaSel:this.jornada(),
         estados:this.estadosDe(this.jornada()), once:this.aliDe(this.jornada()).once,
@@ -3055,6 +3055,8 @@ class Component extends DCLogic {
         convPorJornada:s.convPorJornada, aliPorJornada:s.aliPorJornada,
         jornadaVoto:this.jornadaVoto(), votoPorJornada:s.votoPorJornada, misNotas:s.misNotas, favoritos:s.favoritos
       });
+      const r = await this._enGuardado;
+      this._enGuardado = null;
       if (r && r.faltaSembrar) { await this.sembrarLiga(); return; }
       // Solo se avisa si el guardado falla. Nunca se limpia el mensaje aquí:
       // borraría el que acabe de poner cualquier otra acción del usuario.
@@ -3844,7 +3846,15 @@ class Component extends DCLogic {
           fans: s.fans.some(x => x.id === r.id) ? s.fans : s.fans.concat([{ id:r.id, nombre:r.nombre || 'Fan', email:st.formEmail, favoritos:[] }]) }));
         await this.traer();
       },
-      salir: () => { if (this.bk) this.bk.salir(); this.setState({ loggedIn:false, rol:null, usuarioId:null, fanId:null, perfilId:null, formPass:'', formEmail:'', loginError:'', popup:false, forzarPass:false, mensajePass:'' }); },
+      salir: async () => {
+        // Se espera a que cualquier guardado en curso termine antes de
+        // cerrar sesión: si no, un borrado-y-reescritura a medias (como el
+        // de los favoritos) puede perder datos.
+        clearTimeout(this._t);
+        if (this._enGuardado) await this._enGuardado;
+        if (this.bk) await this.bk.salir();
+        this.setState({ loggedIn:false, rol:null, usuarioId:null, fanId:null, perfilId:null, formPass:'', formEmail:'', loginError:'', popup:false, forzarPass:false, mensajePass:'' });
+      },
       puedeCambiarVista: rolReal === 'mister', noPuedeCambiarVista: rolReal !== 'mister',
       vistasRol: [['mister','Míster'],['jugador','Jugador'],['fan','Fan']].map(([k, label]) => ({ label, style:this.tabBtn(vista === k), go:() => this.setState({ verComo:k, tab:'panel', vistaMvp:'votacion' }) })),
       roleLabel: admin ? 'Míster' : esFan ? 'Fan' : 'Jugador',
