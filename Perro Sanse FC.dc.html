@@ -3661,7 +3661,7 @@ class Component extends DCLogic {
     const slotsDef = FORMACIONES[aliJ.formacion] || FORMACIONES['1-2-3-1'];
     const usados = Object.values(aliJ.once);
     const tipo = TIPOS_CARTEL.find(t => t.k === st.tipoCartel) || TIPOS_CARTEL[0];
-    const prota = JUG.find(p => p.id === st.protagonista) || JUG[0];
+    const prota = JUG.find(p => p.id === st.protagonista) || JUG[0] || {};
     const acta = st.actas.find(a => a.id === st.actaSel) || st.actas[0] ||
       { id:0, jornada: prox ? prox.num : 0, rival: prox ? prox.rival : '—', fecha:'', gf:0, gc:0, eventos:[], minutos:[] };
     const claveFav = esFan && fan ? 'fan-' + fan.id : 'jug-' + st.usuarioId;
@@ -4464,7 +4464,7 @@ class Component extends DCLogic {
       fichaAbierta: st.ficha !== null,
       cerrarFicha: () => this.setState({ ficha:null }),
       ficha: (() => {
-        const p = JUG.find(x => x.id === st.ficha) || JUG[0];
+        const p = JUG.find(x => x.id === st.ficha) || JUG[0] || {};
         const leerFoto = (e, campo) => {
           const file = e.target.files && e.target.files[0];
           if (!file) return;
@@ -5265,7 +5265,7 @@ class Component extends DCLogic {
         barStyle:'height:100%;width:' + Math.round(r.total / maxPts * 100) + '%;background:' + ac + ';border-radius:6px;transition:width 1.1s cubic-bezier(.22,.9,.25,1)'
       })),
       historicoMvp: historico.map(h => {
-        const p = JUG.find(x => x.id === h.podio[0]) || JUG[0];
+        const p = JUG.find(x => x.id === h.podio[0]) || JUG[0] || {};
         return { jornada:h.jornada, rival:h.rival, nombre:p.nombre, votos:h.votos,
           linea:p.goles + 'G · ' + p.asis + 'A', iniciales: p.foto ? '' : iniciales(p.nombre), avatarStyle:this.avatar(p, 46) };
       }),
