@@ -153,7 +153,11 @@ export async function cargar() {
     (comentariosPorPost[c.publicacion_id] = comentariosPorPost[c.publicacion_id] || []).push({ autor: c.autor, texto: c.texto });
   });
 
-  const claveFav = sesion.rol === 'jugador' ? 'jug-' + sesion.jugadorId : 'fan-' + sesion.perfilId;
+  // Misma regla que usa el frontend: si la cuenta tiene ficha de jugador
+  // vinculada (sea jugador o míster-que-juega), la clave es «jug-»; si no
+  // (fan, o míster sin ficha), «fan-». Antes un míster vinculado guardaba
+  // sus favoritos bajo una clave y la app los leía bajo otra: se perdían.
+  const claveFav = sesion.jugadorId != null ? 'jug-' + sesion.jugadorId : 'fan-' + sesion.perfilId;
   const favoritos = {};
   favoritos[claveFav] = (fav.data || []).filter(f => f.perfil_id === sesion.perfilId).map(f => f.jugador_id);
 
@@ -429,7 +433,7 @@ export async function guardar(datos) {
     }
   }
 
-  const clave = sesion.rol === 'jugador' ? 'jug-' + sesion.jugadorId : 'fan-' + sesion.perfilId;
+  const clave = sesion.jugadorId != null ? 'jug-' + sesion.jugadorId : 'fan-' + sesion.perfilId;
   const rf = await guardarFavoritos((datos.favoritos || {})[clave] || []);
   if (rf && rf.error) fallos.push('tus favoritos (' + rf.error + ')');
   const r = await guardarVoto(datos);

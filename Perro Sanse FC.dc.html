@@ -3666,7 +3666,7 @@ class Component extends DCLogic {
     const prota = JUG.find(p => p.id === st.protagonista) || JUG[0] || {};
     const acta = st.actas.find(a => a.id === st.actaSel) || st.actas[0] ||
       { id:0, jornada: prox ? prox.num : 0, rival: prox ? prox.rival : '—', fecha:'', gf:0, gc:0, eventos:[], minutos:[] };
-    const claveFav = esFan && fan ? 'fan-' + fan.id : 'jug-' + st.usuarioId;
+    const claveFav = esFan && fan ? 'fan-' + fan.id : 'jug-' + (miFicha != null ? miFicha : st.usuarioId);
     const misFavs = st.favoritos[claveFav] || [];
 
     const inputStyle = 'width:100%;box-sizing:border-box;background:#16161C;border:1px solid #2A2A33;border-radius:10px;padding:9px 12px;color:#EDEDF2;font-size:14px';
