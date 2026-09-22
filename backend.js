@@ -430,7 +430,8 @@ export async function guardar(datos) {
   }
 
   const clave = sesion.rol === 'jugador' ? 'jug-' + sesion.jugadorId : 'fan-' + sesion.perfilId;
-  await guardarFavoritos((datos.favoritos || {})[clave] || []);
+  const rf = await guardarFavoritos((datos.favoritos || {})[clave] || []);
+  if (rf && rf.error) fallos.push('tus favoritos (' + rf.error + ')');
   const r = await guardarVoto(datos);
   if (r && r.error) fallos.push('tu voto');
   const rn = await guardarNotas(datos);
@@ -440,9 +441,11 @@ export async function guardar(datos) {
 }
 
 async function guardarFavoritos(lista) {
-  await sb.from('favoritos').delete().eq('perfil_id', sesion.perfilId);
+  const d = await sb.from('favoritos').delete().eq('perfil_id', sesion.perfilId);
+  if (d.error) return { error: d.error.message };
   if (lista.length) {
-    await sb.from('favoritos').insert(lista.map(id => ({ perfil_id: sesion.perfilId, jugador_id: id })));
+    const i = await sb.from('favoritos').insert(lista.map(id => ({ perfil_id: sesion.perfilId, jugador_id: id })));
+    if (i.error) return { error: i.error.message };
   }
 }
 
