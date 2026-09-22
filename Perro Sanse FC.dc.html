@@ -3046,22 +3046,30 @@ class Component extends DCLogic {
     // encima de los datos reales.
     if (!this.bk || !this.state.loggedIn || this._cargando || !this._cargado) return;
     const hacerGuardado = async () => {
-      const s = this.state;
-      this._enGuardado = this.bk.guardar({
-        jugadores:s.jugadores, campos:s.campos, partidos:s.partidos, actas:s.actas,
-        avisos:s.avisos, clasificacion:s.clasificacion, multas:s.multas, pagos:s.pagos, sugerencias:s.sugerencias, visibilidad:s.visibilidad, economia:s.economia, jornadaSel:this.jornada(),
-        estados:this.estadosDe(this.jornada()), once:this.aliDe(this.jornada()).once,
-        formacion:this.aliDe(this.jornada()).formacion,
-        convPorJornada:s.convPorJornada, aliPorJornada:s.aliPorJornada,
-        jornadaVoto:this.jornadaVoto(), votoPorJornada:s.votoPorJornada, misNotas:s.misNotas, favoritos:s.favoritos
-      });
-      const r = await this._enGuardado;
-      this._enGuardado = null;
-      if (r && r.faltaSembrar) { await this.sembrarLiga(); return; }
-      // Solo se avisa si el guardado falla. Nunca se limpia el mensaje aquí:
-      // borraría el que acabe de poner cualquier otra acción del usuario.
-      if (r && r.ok === false) {
-        this.setState({ avisoGuardado: r.error || 'No se pudo guardar en el servidor.' });
+      try {
+        const s = this.state;
+        this._enGuardado = this.bk.guardar({
+          jugadores:s.jugadores, campos:s.campos, partidos:s.partidos, actas:s.actas,
+          avisos:s.avisos, clasificacion:s.clasificacion, multas:s.multas, pagos:s.pagos, sugerencias:s.sugerencias, visibilidad:s.visibilidad, economia:s.economia, jornadaSel:this.jornada(),
+          estados:this.estadosDe(this.jornada()), once:this.aliDe(this.jornada()).once,
+          formacion:this.aliDe(this.jornada()).formacion,
+          convPorJornada:s.convPorJornada, aliPorJornada:s.aliPorJornada,
+          jornadaVoto:this.jornadaVoto(), votoPorJornada:s.votoPorJornada, misNotas:s.misNotas, favoritos:s.favoritos
+        });
+        const r = await this._enGuardado;
+        this._enGuardado = null;
+        if (r && r.faltaSembrar) { await this.sembrarLiga(); return; }
+        // Solo se avisa si el guardado falla. Nunca se limpia el mensaje aquí:
+        // borraría el que acabe de poner cualquier otra acción del usuario.
+        if (r && r.ok === false) {
+          this.setState({ avisoGuardado: r.error || 'No se pudo guardar en el servidor.' });
+        }
+      } catch (e) {
+        // Antes, un fallo aquí (de red, de permisos, lo que sea) se perdía
+        // sin dejar rastro: el guardado simplemente no ocurría y no se veía
+        // ningún aviso. Ahora se muestra siempre.
+        this._enGuardado = null;
+        this.setState({ avisoGuardado: 'No se pudo guardar: ' + (e && e.message ? e.message : String(e)) });
       }
     };
     if (inmediato) { hacerGuardado(); return; }
