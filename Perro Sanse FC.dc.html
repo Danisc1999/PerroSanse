@@ -2980,8 +2980,8 @@ class Component extends DCLogic {
         if (s && s.ok) {
           this._cargando = true;
           this.setState({
-            loggedIn:true, rol:s.rol, usuarioId:s.id, perfilId:s.perfilId,
-            forzarPass: !!s.primeraVez, tab: s.rol === 'fan' ? 'feed' : 'panel'
+            loggedIn:true, rol:s.rol, usuarioId:s.id, perfilId:s.perfilId, fanId: s.rol === 'fan' ? s.perfilId : null,
+            nombreSesion: s.nombre || '', forzarPass: !!s.primeraVez, tab: s.rol === 'fan' ? 'feed' : 'panel'
           });
           await this.traer();
           return;
@@ -3636,7 +3636,7 @@ class Component extends DCLogic {
     const yo = JUG.find(p => p.id === st.usuarioId);
     // Mi ficha como jugador: null si mi cuenta no está vinculada a ninguna.
     const miFicha = yo ? yo.id : null;
-    const fan = st.fans.find(f => f.id === st.fanId) || (rolReal === 'mister' && esFan ? st.fans[0] : null);
+    const fan = st.fans.find(f => f.id === st.fanId) || (esFan && st.perfilId ? { id: st.perfilId, nombre: st.nombreSesion || 'Fan' } : null) || (rolReal === 'mister' && esFan ? st.fans[0] : null);
     const SIN_PARTIDO = { num:0, rival:'Sin rival', casa:true, campoId:0, pista:'', dia:1, mes:'Enero', hora:'--:--', gf:null, gc:null };
     const prox = st.partidos.find(p => p.gf === null) || st.partidos[st.partidos.length - 1] || SIN_PARTIDO;
     const jornadaSel = this.jornada();
