@@ -61,7 +61,15 @@ async function entrar(email, pass, rolEsperado) {
   const { data, error } = await sb.auth.signInWithPassword({
     email: (email || '').trim().toLowerCase(), password: pass
   });
-  if (error) return { ok: false, error: 'Correo o contraseña incorrectos.' };
+  if (error) {
+    // Antes cualquier error se enseñaba como «correo o contraseña
+    // incorrectos», así que un correo sin confirmar parecía una
+    // contraseña mal escrita. Se distingue para poder arreglarlo.
+    if (/confirm/i.test(error.message)) {
+      return { ok: false, error: 'Ese correo todavía no está confirmado. Revisa Authentication → Providers → Email → «Confirm email» en Supabase, o confirma la cuenta desde Authentication → Users.' };
+    }
+    return { ok: false, error: 'Correo o contraseña incorrectos.' };
+  }
   return perfilDe(data.user, rolEsperado);
 }
 
@@ -371,6 +379,7 @@ export async function guardar(datos) {
   const jornada = datos.jornadaSel || 0;
 
   if (sesion.rol === 'mister') {
+    const fallos = [];
     const conId = (datos.clasificacion || []).filter(e => e.id != null);
     const res = await Promise.all([
       sb.from('jugadores').upsert((datos.jugadores || []).map(j => ({
@@ -408,10 +417,16 @@ export async function guardar(datos) {
     }
     const rv = await guardarVoto(datos);
     const rn = await guardarNotas(datos);
+    // El míster vinculado a una ficha de jugador también tiene favoritos
+    // propios; antes esta rama nunca los guardaba (solo lo hacía la de
+    // jugador/fan más abajo, a la que el míster no llega por el «return»).
+    const claveFavMister = sesion.jugadorId != null ? 'jug-' + sesion.jugadorId : 'fan-' + sesion.perfilId;
+    const rf = await guardarFavoritos((datos.favoritos || {})[claveFavMister] || []);
     const nombres = ['la plantilla', 'los campos', 'el calendario', 'las actas', 'los avisos', 'la alineación', 'la convocatoria', 'la clasificación'];
-    const fallos = res.map((r, i) => r && r.error ? nombres[i] + ' (' + r.error.message + ')' : null).filter(Boolean);
+    res.forEach((r, i) => { if (r && r.error) fallos.push(nombres[i] + ' (' + r.error.message + ')'); });
     if (rv && rv.error) fallos.push('tu voto (' + rv.error.message + ')');
     if (rn && rn.error) fallos.push('tus notas (' + rn.error.message + ')');
+    if (rf && rf.error) fallos.push('tus favoritos (' + rf.error + ')');
     if (eco && !eco.ok) fallos.push('las multas o cuotas (' + eco.error + ')');
     if (fallos.length) return { ok: false, error: 'No se pudo guardar ' + fallos.join('; ') };
 
