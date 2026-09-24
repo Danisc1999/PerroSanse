@@ -2013,6 +2013,10 @@
               </sc-if>
             </div>
             <div style="font-size:15px;color:#DDDDE4;margin-top:8px">{{ s.texto }}</div>
+            <div style="display:flex;gap:8px;margin-top:10px">
+              <button onClick="{{ s.votarArriba }}" style="{{ s.estiloArriba }}">👍 {{ s.arriba }}</button>
+              <button onClick="{{ s.votarAbajo }}" style="{{ s.estiloAbajo }}">👎 {{ s.abajo }}</button>
+            </div>
           </div>
         </sc-for>
       </div>
@@ -5629,7 +5633,24 @@ class Component extends DCLogic {
         estadoLabel: s2.leida ? 'Leída' : 'Nueva',
         estadoStyle: this.pill(s2.leida ? 'transparent' : '#FF2E8822', s2.leida ? '#6D6D7A' : '#FF2E88', s2.leida ? '#33333D' : '#FF2E88') + ';cursor:' + (admin ? 'pointer' : 'default'),
         alternar: () => { if (!admin) return; this.setState(st2 => ({ sugerencias: st2.sugerencias.map(x => x.id === s2.id ? Object.assign({}, x, { leida: !x.leida }) : x) })); },
-        borrar: () => { if (!admin) return; this.bk.borrar('sugerencias', s2.id); this.setState(st2 => ({ sugerencias: st2.sugerencias.filter(x => x.id !== s2.id) })); }
+        borrar: () => { if (!admin) return; this.bk.borrar('sugerencias', s2.id); this.setState(st2 => ({ sugerencias: st2.sugerencias.filter(x => x.id !== s2.id) })); },
+        arriba: s2.arriba || 0, abajo: s2.abajo || 0,
+        estiloArriba: 'border-radius:8px;padding:6px 12px;font-size:13px;cursor:pointer;border:1px solid ' + (s2.miVoto > 0 ? '#2FA8A0' : '#33333D') + ';background:' + (s2.miVoto > 0 ? '#2FA8A022' : 'transparent') + ';color:' + (s2.miVoto > 0 ? '#2FA8A0' : '#C9C9D2'),
+        estiloAbajo: 'border-radius:8px;padding:6px 12px;font-size:13px;cursor:pointer;border:1px solid ' + (s2.miVoto < 0 ? '#E4404A' : '#33333D') + ';background:' + (s2.miVoto < 0 ? '#E4404A22' : 'transparent') + ';color:' + (s2.miVoto < 0 ? '#E4404A' : '#C9C9D2'),
+        votarArriba: () => {
+          const nuevo = s2.miVoto > 0 ? 0 : 1;
+          this.setState(st2 => ({ sugerencias: st2.sugerencias.map(x => x.id === s2.id ? Object.assign({}, x, {
+            miVoto:nuevo, arriba:(x.arriba||0) + (nuevo>0?1:-1), abajo: s2.miVoto<0 ? (x.abajo||0)-1 : (x.abajo||0)
+          }) : x) }));
+          this.bk.votarSugerencia(s2.id, nuevo);
+        },
+        votarAbajo: () => {
+          const nuevo = s2.miVoto < 0 ? 0 : -1;
+          this.setState(st2 => ({ sugerencias: st2.sugerencias.map(x => x.id === s2.id ? Object.assign({}, x, {
+            miVoto:nuevo, abajo:(x.abajo||0) + (nuevo<0?1:-1), arriba: s2.miVoto>0 ? (x.arriba||0)-1 : (x.arriba||0)
+          }) : x) }));
+          this.bk.votarSugerencia(s2.id, nuevo);
+        }
       })),
 
       nuevoAviso: async () => {

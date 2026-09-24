@@ -152,7 +152,7 @@ export async function recuperarPass(email) {
 export async function cargar() {
   if (!sesion) return null;
 
-  const [jug, cam, par, act, avi, pub, com, fav, vot, cla, cvs, als, nts, mul, pag, sug, aju, eco, equ, tem, his, pl, pr] = await Promise.all([
+  const [jug, cam, par, act, avi, pub, com, fav, vot, cla, cvs, als, nts, mul, pag, sug, svo, aju, eco, equ, tem, his, pl, pr] = await Promise.all([
     sb.from('jugadores').select('*').order('id'),
     sb.from('campos').select('*').order('id'),
     sb.from('partidos').select('*').order('num'),
@@ -169,6 +169,7 @@ export async function cargar() {
     sb.from('multas').select('*').order('id', { ascending: false }),
     sb.from('pagos').select('*'),
     sb.from('sugerencias').select('*').order('id', { ascending: false }),
+    sb.from('sugerencia_votos').select('*'),
     sb.from('ajustes').select('*').eq('clave', 'visibilidad').maybeSingle(),
     sb.from('ajustes').select('*').eq('clave', 'economia').maybeSingle(),
     sb.from('ajustes').select('*').eq('clave', 'equipaciones').maybeSingle(),
@@ -273,7 +274,19 @@ export async function cargar() {
     notas: nts.data || [],
     multas: mul.data || [],
     pagos: pag.data || [],
-    sugerencias: sug.data || [],
+    sugerencias: (() => {
+      // Igual que los likes: un voto por persona y sugerencia, contado
+      // aquí a partir de filas propias, nunca de un número enviado.
+      const arriba = {}, abajo = {}, miVoto = {};
+      (svo.data || []).forEach(v => {
+        if (v.valor > 0) arriba[v.sugerencia_id] = (arriba[v.sugerencia_id] || 0) + 1;
+        else abajo[v.sugerencia_id] = (abajo[v.sugerencia_id] || 0) + 1;
+        if (v.perfil_id === sesion.perfilId) miVoto[v.sugerencia_id] = v.valor;
+      });
+      return (sug.data || []).map(s => Object.assign({}, s, {
+        arriba: arriba[s.id] || 0, abajo: abajo[s.id] || 0, miVoto: miVoto[s.id] || 0
+      }));
+    })(),
     visibilidad: (aju && aju.data && aju.data.valor) || null,
     economia: (eco && eco.data && eco.data.valor) || null,
     fotosEquipacion: (equ && equ.data && equ.data.valor) || null,
@@ -357,7 +370,7 @@ export async function guardarEconomia(multas, pagos, sugerencias) {
   const res = await Promise.all([
     (multas || []).length ? sb.from('multas').upsert(multas.filter(m => m.id != null)) : Promise.resolve({}),
     (pagos || []).length ? sb.from('pagos').upsert(pagos.filter(p => p.id != null)) : Promise.resolve({}),
-    (sugerencias || []).length ? sb.from('sugerencias').upsert(sugerencias.filter(s => s.id != null)) : Promise.resolve({})
+    (sugerencias || []).length ? sb.from('sugerencias').upsert(sugerencias.filter(s => s.id != null).map(s => ({ id:s.id, autor:s.autor, rol:s.rol, texto:s.texto, fecha:s.fecha, leida:s.leida }))) : Promise.resolve({})
   ]);
   const fallo = res.find(r => r && r.error);
   return fallo ? { ok: false, error: fallo.error.message } : { ok: true };
@@ -731,6 +744,20 @@ export async function enviarAviso(titulo, cuerpo, destino, opciones) {
 /** Recuento rápido de uso: filas por tabla + tamaño del almacén de fotos.
  *  No sustituye al panel de Supabase (cuota real de plan), solo da una
  *  idea de volumen para saber si hace falta mirarlo. */
+/** Voto de una sugerencia: +1 me gusta, -1 no me gusta, 0 quita el voto.
+ *  Una fila por persona; el recuento lo hace `cargar()`. */
+export async function votarSugerencia(id, valor) {
+  if (!sesion) return { ok: false, error: 'Sin sesión.' };
+  if (!valor) {
+    const { error } = await sb.from('sugerencia_votos').delete()
+      .eq('sugerencia_id', id).eq('perfil_id', sesion.perfilId);
+    return error ? { ok: false, error: error.message } : { ok: true };
+  }
+  const { error } = await sb.from('sugerencia_votos')
+    .upsert({ sugerencia_id: id, perfil_id: sesion.perfilId, valor });
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
 export async function medirUso() {
   if (!sesion || sesion.rol !== 'mister') return { ok: false, error: 'Solo el míster.' };
   const tablas = ['jugadores','partidos','actas','publicaciones','comentarios','multas','pagos','sugerencias','notas','votos_mvp','push_subs','historico_liga'];
