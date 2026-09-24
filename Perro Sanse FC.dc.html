@@ -4524,8 +4524,9 @@ class Component extends DCLogic {
             const txt = (st.borradores[p.id] || '').trim();
             if (!txt) return;
             this.setState(s => ({ borradores: Object.assign({}, s.borradores, { [p.id]:'' }) }));
-            const r = await this.bk.comentar(p.id, autor, txt);
-            this.patchPost(p.id, { comentarios: p.comentarios.concat([{ id: r.id, autor, texto:txt }]) });
+            const r = await this.bk.comentar(p.id, txt);
+            if (!r.ok) { this.setState({ avisoGuardado:'No se pudo comentar: ' + r.error }); return; }
+            this.patchPost(p.id, { comentarios: p.comentarios.concat([{ id: r.id, autor: r.autor, texto:txt }]) });
           }
         };
       }),
@@ -5617,9 +5618,7 @@ class Component extends DCLogic {
       enviarSugerencia: async () => {
         const txt = (st.textoSugerencia || '').trim();
         if (!txt) return;
-        const autor = admin ? 'Míster' : esFan ? (fan ? fan.nombre : 'Fan') : (yo ? yo.nombre : 'Jugador');
-        const fila = { autor, rol: esFan ? 'fan' : admin ? 'mister' : 'jugador', texto:txt, fecha:'hoy', leida:false };
-        const creada = await this.bk.crear('sugerencias', fila);
+        const creada = await this.bk.crearSugerencia(txt);
         if (!creada) { this.setState({ avisoGuardado:'No se pudo enviar. Falta crear la tabla «sugerencias» (ver SUPABASE.md).' }); return; }
         this.setState(s => ({ sugerencias:[creada].concat(s.sugerencias || []), textoSugerencia:'', graciasSugerencia:true }));
       },

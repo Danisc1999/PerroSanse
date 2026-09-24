@@ -820,10 +820,23 @@ export async function borrarPublicacion(id) {
   return error ? { ok: false, error: error.message } : { ok: true };
 }
 
-export async function comentar(publicacionId, autor, texto) {
+export async function comentar(publicacionId, texto) {
+  // El autor y el rol los decide el servidor a partir de la sesión: nunca
+  // lo que mande la app, así que nadie puede firmar con el nombre de otro.
+  if (!sesion) return { ok: false, error: 'Sin sesión.' };
+  const autor = sesion.rol === 'mister' ? 'Míster' : (sesion.nombre || (sesion.rol === 'fan' ? 'Fan' : 'Jugador'));
   const { data, error } = await sb.from('comentarios')
     .insert({ publicacion_id: publicacionId, autor, texto }).select().single();
-  return error ? { ok: false, error: error.message } : { ok: true, id: data.id };
+  return error ? { ok: false, error: error.message } : { ok: true, id: data.id, autor };
+}
+
+/** Igual que comentar: el autor y el rol se fijan aquí, no en la app. */
+export async function crearSugerencia(texto) {
+  if (!sesion) return null;
+  const autor = sesion.rol === 'mister' ? 'Míster' : (sesion.nombre || (sesion.rol === 'fan' ? 'Fan' : 'Jugador'));
+  const { data, error } = await sb.from('sugerencias')
+    .insert({ autor, rol: sesion.rol, texto, fecha: 'hoy', leida: false }).select().single();
+  return error ? null : data;
 }
 
 /** Moderación: solo el míster puede borrar el comentario de otro. */
