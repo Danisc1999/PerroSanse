@@ -32,9 +32,17 @@ async function perfilDe(user, rolEsperado) {
 
   if (errPerfil) return { ok: false, error: 'Error del servidor: ' + errPerfil.message };
   if (!perfil) return { ok: false, error: 'Esa cuenta no tiene perfil asignado. Avisa al míster.' };
+  if (perfil.bloqueado) return { ok: false, error: 'El míster ha bloqueado esta cuenta.' };
   if (rolEsperado && perfil.rol !== rolEsperado) {
     const comoQue = { mister: 'de míster', jugador: 'de jugador', fan: 'de fan' };
     return { ok: false, error: 'Esa cuenta no es ' + comoQue[rolEsperado] + ', es ' + comoQue[perfil.rol] + '.' };
+  }
+
+  // Se guarda el correo en el propio perfil la primera vez que se ve:
+  // así el míster puede listar fans y jugadores sin necesitar permisos
+  // de administrador sobre la tabla de usuarios.
+  if (!perfil.email && user.email) {
+    try { await sb.from('perfiles').update({ email: user.email }).eq('id', user.id); } catch (e) {}
   }
 
   sesion = { rol: perfil.rol, jugadorId: perfil.jugador_id, perfilId: user.id, nombre: perfil.nombre };
@@ -87,6 +95,7 @@ export async function registrarFan(nombre, email, pass) {
   });
   if (error) return { ok: false, error: error.message };
   if (!data.session) return { ok: false, error: 'Cuenta creada. Confirma el correo que te hemos enviado y entra.' };
+  try { await sb.from('perfiles').update({ email: correo }).eq('id', data.user.id); } catch (e) {}
   sesion = { rol: 'fan', jugadorId: null, perfilId: data.user.id, nombre: nombre.trim() };
   return { ok: true, fan: { id: data.user.id, nombre: nombre.trim(), email: correo, favoritos: [] } };
 }
@@ -108,6 +117,31 @@ export async function comprobarPassActual(rol, pass) {
   return !error;
 }
 
+/* ---------------- GESTIÓN DE FANS (solo míster) ---------------- */
+
+export async function listarFans() {
+  if (!sesion || sesion.rol !== 'mister') return { ok: false, error: 'Solo el míster.' };
+  const { data, error } = await sb.from('perfiles').select('id, nombre, email, bloqueado, creado')
+    .eq('rol', 'fan').order('creado', { ascending: false });
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, fans: data || [] };
+}
+
+export async function bloquearFan(perfilId, bloqueado) {
+  if (!sesion || sesion.rol !== 'mister') return { ok: false, error: 'Solo el míster.' };
+  const { error } = await sb.from('perfiles').update({ bloqueado }).eq('id', perfilId);
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
+/** Elimina la cuenta de un fan: borra su perfil (y en cascada sus
+ *  favoritos, likes, reacciones y comentarios). Sin perfil no puede
+ *  volver a entrar, aunque su cuenta de acceso siga existiendo. */
+export async function borrarFan(perfilId) {
+  if (!sesion || sesion.rol !== 'mister') return { ok: false, error: 'Solo el míster.' };
+  const { error } = await sb.from('perfiles').delete().eq('id', perfilId);
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
 export async function recuperarPass(email) {
   const { error } = await sb.auth.resetPasswordForEmail((email || '').trim().toLowerCase());
   return !error;
@@ -118,7 +152,7 @@ export async function recuperarPass(email) {
 export async function cargar() {
   if (!sesion) return null;
 
-  const [jug, cam, par, act, avi, pub, com, fav, vot, cla, cvs, als, nts, mul, pag, sug, aju, eco, equ, tem, his] = await Promise.all([
+  const [jug, cam, par, act, avi, pub, com, fav, vot, cla, cvs, als, nts, mul, pag, sug, aju, eco, equ, tem, his, pl, pr] = await Promise.all([
     sb.from('jugadores').select('*').order('id'),
     sb.from('campos').select('*').order('id'),
     sb.from('partidos').select('*').order('num'),
@@ -139,7 +173,9 @@ export async function cargar() {
     sb.from('ajustes').select('*').eq('clave', 'economia').maybeSingle(),
     sb.from('ajustes').select('*').eq('clave', 'equipaciones').maybeSingle(),
     sb.from('temporadas').select('*').order('id', { ascending: false }),
-    sb.from('historico_liga').select('*').order('jornada')
+    sb.from('historico_liga').select('*').order('jornada'),
+    sb.from('post_likes').select('*'),
+    sb.from('post_reacciones').select('*')
   ]);
 
   const partidos = (par.data || []).map(p => ({
@@ -158,7 +194,25 @@ export async function cargar() {
 
   const comentariosPorPost = {};
   (com.data || []).forEach(c => {
-    (comentariosPorPost[c.publicacion_id] = comentariosPorPost[c.publicacion_id] || []).push({ autor: c.autor, texto: c.texto });
+    (comentariosPorPost[c.publicacion_id] = comentariosPorPost[c.publicacion_id] || []).push({ id: c.id, autor: c.autor, texto: c.texto });
+  });
+
+  // Los likes y reacciones se cuentan aquí, a partir de una fila por
+  // persona (post_likes / post_reacciones). Nadie puede inflar un número
+  // a mano: solo puede existir o no existir SU fila, y eso lo garantiza
+  // la política de seguridad de esas tablas, no la app.
+  const likesPorPost = {}, misLikesPorPost = {};
+  (pl.data || []).forEach(l => {
+    likesPorPost[l.publicacion_id] = (likesPorPost[l.publicacion_id] || 0) + 1;
+    if (l.perfil_id === sesion.perfilId) misLikesPorPost[l.publicacion_id] = true;
+  });
+  const reaccionesPorPost = {}, misReaccionesPorPost = {};
+  (pr.data || []).forEach(r => {
+    const bucket = (reaccionesPorPost[r.publicacion_id] = reaccionesPorPost[r.publicacion_id] || {});
+    bucket[r.emoji] = (bucket[r.emoji] || 0) + 1;
+    if (r.perfil_id === sesion.perfilId) {
+      (misReaccionesPorPost[r.publicacion_id] = misReaccionesPorPost[r.publicacion_id] || {})[r.emoji] = true;
+    }
   });
 
   // Misma regla que usa el frontend: si la cuenta tiene ficha de jugador
@@ -192,8 +246,11 @@ export async function cargar() {
     })(),
     avisos: avi.data || [],
     feed: (pub.data || []).map(p => Object.assign({}, p, {
-      misLikes: false, reacciones: p.reacciones || {}, comentarios: comentariosPorPost[p.id] || []
+      likes: likesPorPost[p.id] || 0, misLikes: !!misLikesPorPost[p.id],
+      reacciones: Object.assign({ '🔥':0, '👏':0, '😂':0 }, reaccionesPorPost[p.id] || {}),
+      comentarios: comentariosPorPost[p.id] || []
     })),
+    misReaccionesPorPost,
     convPorJornada,
     aliPorJornada,
     clasificacion: (() => {
@@ -460,12 +517,21 @@ export async function guardar(datos) {
 }
 
 async function guardarFavoritos(lista) {
-  const d = await sb.from('favoritos').delete().eq('perfil_id', sesion.perfilId);
-  if (d.error) return { error: d.error.message };
+  // Antes se borraba todo y se volvía a insertar: si dos guardados
+  // se cruzaban (móvil + PC casi a la vez), el segundo insertaba las
+  // mismas filas que el primero y chocaba con la clave única. Con
+  // upsert no hay choque, y el delete solo quita lo que ya no está.
   if (lista.length) {
-    const i = await sb.from('favoritos').insert(lista.map(id => ({ perfil_id: sesion.perfilId, jugador_id: id })));
+    const i = await sb.from('favoritos').upsert(
+      lista.map(id => ({ perfil_id: sesion.perfilId, jugador_id: id })),
+      { onConflict: 'perfil_id,jugador_id' }
+    );
     if (i.error) return { error: i.error.message };
   }
+  let q = sb.from('favoritos').delete().eq('perfil_id', sesion.perfilId);
+  q = lista.length ? q.not('jugador_id', 'in', '(' + lista.join(',') + ')') : q;
+  const d = await q;
+  if (d.error) return { error: d.error.message };
 }
 
 /** Sube una imagen al almacén y devuelve su dirección pública.
@@ -728,16 +794,44 @@ export async function borrarPublicacion(id) {
 }
 
 export async function comentar(publicacionId, autor, texto) {
-  await sb.from('comentarios').insert({ publicacion_id: publicacionId, autor, texto });
+  const { data, error } = await sb.from('comentarios')
+    .insert({ publicacion_id: publicacionId, autor, texto }).select().single();
+  return error ? { ok: false, error: error.message } : { ok: true, id: data.id };
 }
 
-export async function reaccionar(publicacionId, likes, reacciones) {
-  // Solo el míster puede escribir en «publicaciones» directamente (política
-  // admin_publica). Jugadores y fans pasan por esta función seguridad-definer,
-  // que solo toca likes/reacciones y nada más de la fila.
-  const { error } = await sb.rpc('reaccionar_publicacion', {
-    p_id: publicacionId, p_likes: likes, p_reacciones: reacciones
-  });
+/** Moderación: solo el míster puede borrar el comentario de otro. */
+export async function borrarComentario(id) {
+  if (!sesion || sesion.rol !== 'mister') return { ok: false, error: 'Solo el míster.' };
+  const { error } = await sb.from('comentarios').delete().eq('id', id);
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
+/** Like de una publicación: activar añade tu fila, desactivar la borra.
+ *  No hay número que enviar — el recuento lo hace `cargar()` contando
+ *  filas, así que nadie puede escribir un número arbitrario. */
+export async function darLike(publicacionId, activo) {
+  if (!sesion) return { ok: false, error: 'Sin sesión.' };
+  if (activo) {
+    const { error } = await sb.from('post_likes')
+      .upsert({ publicacion_id: publicacionId, perfil_id: sesion.perfilId });
+    return error ? { ok: false, error: error.message } : { ok: true };
+  }
+  const { error } = await sb.from('post_likes').delete()
+    .eq('publicacion_id', publicacionId).eq('perfil_id', sesion.perfilId);
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
+/** Igual que darLike pero por emoji: cada persona pone o quita SU fila
+ *  para SU emoji en esa publicación, nunca un contador. */
+export async function reaccionar(publicacionId, emoji, activo) {
+  if (!sesion) return { ok: false, error: 'Sin sesión.' };
+  if (activo) {
+    const { error } = await sb.from('post_reacciones')
+      .upsert({ publicacion_id: publicacionId, perfil_id: sesion.perfilId, emoji });
+    return error ? { ok: false, error: error.message } : { ok: true };
+  }
+  const { error } = await sb.from('post_reacciones').delete()
+    .eq('publicacion_id', publicacionId).eq('perfil_id', sesion.perfilId).eq('emoji', emoji);
   return error ? { ok: false, error: error.message } : { ok: true };
 }
 
