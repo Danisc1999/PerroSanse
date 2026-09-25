@@ -253,6 +253,11 @@
       <div style="background:linear-gradient(120deg,#15151B,#101014);border:1px solid #26262E;border-radius:18px;padding:22px;display:flex;gap:26px;flex-wrap:wrap">
         <div style="flex:2;min-width:280px">
           <div style="font-family:'Barlow Condensed',sans-serif;letter-spacing:.2em;font-size:12px;color:#FF2E88;text-transform:uppercase">Próximo partido · Jornada {{ proximo.num }}</div>
+          <div style="display:flex;align-items:center;gap:14px;margin-top:12px">
+            <div style="{{ proximo.nuestroBadgeGrande }}"></div>
+            <div style="font-family:'Anton',sans-serif;font-size:18px;color:#6D6D7A">VS</div>
+            <div style="{{ proximo.rivalBadgeGrande }}">{{ proximo.rivalInicial }}</div>
+          </div>
           <div style="font-family:'Anton',sans-serif;font-size:clamp(26px,5vw,38px);line-height:1.05;margin-top:10px;text-transform:uppercase;overflow-wrap:anywhere">{{ proximo.enfrentamiento }}</div>
           <div style="display:flex;flex-wrap:wrap;gap:20px;margin-top:14px;font-size:15px;color:#C9C9D2">
             <div><span style="color:#8A8A96">Fecha · </span>{{ proximo.fechaLarga }}</div>
@@ -1649,7 +1654,22 @@
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:16px;margin-top:16px">
         <div style="background:linear-gradient(160deg,#0F2620,#0E0E12);border:1px solid #2FA8A0;border-radius:18px;padding:20px">
           <div style="font-family:'Barlow Condensed',sans-serif;letter-spacing:.2em;font-size:12px;color:#2FA8A0;text-transform:uppercase">En caja</div>
-          <div style="font-family:'Anton',sans-serif;font-size:40px;line-height:1;margin-top:6px">{{ totalCaja }} €</div>
+          <sc-if value="{{ noEditandoCaja }}">
+            <div style="display:flex;align-items:baseline;gap:10px;margin-top:6px">
+              <div style="font-family:'Anton',sans-serif;font-size:40px;line-height:1">{{ totalCaja }} €</div>
+              <sc-if value="{{ esAdmin }}">
+                <button onClick="{{ abrirEditarCaja }}" title="Ajustar a mano" style="background:transparent;border:1px solid #2FA8A0;color:#2FA8A0;border-radius:8px;padding:4px 10px;font-size:12px;cursor:pointer">✎ Ajustar</button>
+              </sc-if>
+            </div>
+          </sc-if>
+          <sc-if value="{{ editandoCaja }}">
+            <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center">
+              <input value="{{ valorCajaEdit }}" onChange="{{ setValorCaja }}" style="{{ inputStyle }};max-width:140px;font-size:18px"></input>
+              <button onClick="{{ guardarCaja }}" style="background:#2FA8A0;color:#0B0B0D;border:0;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">Guardar</button>
+              <button onClick="{{ cancelarEditarCaja }}" style="background:transparent;border:1px solid #33333D;color:#8A8A96;border-radius:8px;padding:8px 12px;cursor:pointer">Cancelar</button>
+            </div>
+            <div style="font-size:12px;color:#6D6D7A;margin-top:6px">Lo que pongas será el dinero real en caja. Los cobros y multas que apuntes después se sumarán encima.</div>
+          </sc-if>
         </div>
         <div style="background:#101014;border:1px solid #26262E;border-radius:18px;padding:20px">
           <div style="font-family:'Barlow Condensed',sans-serif;letter-spacing:.2em;font-size:12px;color:#E4404A;text-transform:uppercase">Por cobrar</div>
@@ -2764,21 +2784,40 @@ const CAMPOS = [
 ];
 
 const PARTIDOS = [
-  { num:1, rival:'Los Arroyos FS',        casa:true,  campoId:3, pista:'', dia:13, mes:'Septiembre', hora:'11:00', gf:null, gc:null },
-  { num:2, rival:'Racing Club Sanse',     casa:false, campoId:1, pista:'', dia:20, mes:'Septiembre', hora:'12:00', gf:null, gc:null },
-  { num:3, rival:'CD Baviera',            casa:true,  campoId:3, pista:'', dia:27, mes:'Septiembre', hora:'11:00', gf:null, gc:null },
-  { num:4, rival:'Sporting Reyes',        casa:false, campoId:2, pista:'', dia:4,  mes:'Octubre',    hora:'10:30', gf:null, gc:null },
-  { num:5, rival:'Real Fuente del Fresno',casa:true,  campoId:3, pista:'', dia:11, mes:'Octubre',    hora:'11:00', gf:null, gc:null },
-  { num:6, rival:'Atlético Tempranales',  casa:false, campoId:1, pista:'', dia:18, mes:'Octubre',    hora:'12:00', gf:null, gc:null },
-  { num:7, rival:'Veteranos Colmenar',    casa:true,  campoId:3, pista:'', dia:25, mes:'Octubre',    hora:'11:00', gf:null, gc:null },
-  { num:8, rival:'AD Tempranales B',      casa:false, campoId:2, pista:'', dia:1,  mes:'Noviembre',  hora:'10:30', gf:null, gc:null }
+  { num:1, rival:'Sobrasada Team', casa:true, campoId:3, pista:'', dia:26, mes:'Septiembre', hora:'19:00', gf:null, gc:null },
+  { num:2, rival:'Teresilabos', casa:false, campoId:1, pista:'', dia:3, mes:'Octubre', hora:'19:00', gf:null, gc:null },
+  { num:3, rival:'Deportivo Yan', casa:true, campoId:3, pista:'', dia:17, mes:'Octubre', hora:'19:00', gf:null, gc:null },
+  { num:4, rival:'GDD', casa:false, campoId:1, pista:'', dia:24, mes:'Octubre', hora:'19:00', gf:null, gc:null },
+  { num:5, rival:'UD Sin Derechos', casa:false, campoId:1, pista:'', dia:7, mes:'Noviembre', hora:'19:00', gf:null, gc:null },
+  { num:6, rival:'Sabadete FC', casa:true, campoId:3, pista:'', dia:14, mes:'Noviembre', hora:'19:00', gf:null, gc:null },
+  { num:7, rival:'Sant Francis F.C (F7 Ss)', casa:false, campoId:1, pista:'', dia:21, mes:'Noviembre', hora:'19:00', gf:null, gc:null },
+  { num:8, rival:'Sportium De Gijon', casa:true, campoId:3, pista:'', dia:28, mes:'Noviembre', hora:'19:00', gf:null, gc:null },
+  { num:9, rival:'Birrareal', casa:false, campoId:1, pista:'', dia:12, mes:'Diciembre', hora:'19:00', gf:null, gc:null },
+  { num:10, rival:'FC Salvatierra De Santiago', casa:true, campoId:3, pista:'', dia:19, mes:'Diciembre', hora:'19:00', gf:null, gc:null },
+  { num:11, rival:'Logia Masonica', casa:false, campoId:1, pista:'', dia:16, mes:'Enero', hora:'19:00', gf:null, gc:null },
+  { num:12, rival:'Racing Sanse', casa:true, campoId:3, pista:'', dia:23, mes:'Enero', hora:'19:00', gf:null, gc:null },
+  { num:13, rival:'Sanse 04', casa:false, campoId:1, pista:'', dia:30, mes:'Enero', hora:'19:00', gf:null, gc:null },
+  { num:14, rival:'Sobrasada Team', casa:false, campoId:1, pista:'', dia:6, mes:'Febrero', hora:'19:00', gf:null, gc:null },
+  { num:15, rival:'Teresilabos', casa:true, campoId:3, pista:'', dia:20, mes:'Febrero', hora:'19:00', gf:null, gc:null },
+  { num:16, rival:'Deportivo Yan', casa:false, campoId:1, pista:'', dia:27, mes:'Febrero', hora:'19:00', gf:null, gc:null },
+  { num:17, rival:'GDD', casa:true, campoId:3, pista:'', dia:6, mes:'Marzo', hora:'19:00', gf:null, gc:null },
+  { num:18, rival:'UD Sin Derechos', casa:true, campoId:3, pista:'', dia:13, mes:'Marzo', hora:'19:00', gf:null, gc:null },
+  { num:19, rival:'Sabadete FC', casa:false, campoId:1, pista:'', dia:3, mes:'Abril', hora:'19:00', gf:null, gc:null },
+  { num:20, rival:'Sant Francis F.C (F7 Ss)', casa:true, campoId:3, pista:'', dia:10, mes:'Abril', hora:'19:00', gf:null, gc:null },
+  { num:21, rival:'Sportium De Gijon', casa:false, campoId:1, pista:'', dia:17, mes:'Abril', hora:'19:00', gf:null, gc:null },
+  { num:22, rival:'Birrareal', casa:true, campoId:3, pista:'', dia:24, mes:'Abril', hora:'19:00', gf:null, gc:null },
+  { num:23, rival:'FC Salvatierra De Santiago', casa:false, campoId:1, pista:'', dia:8, mes:'Mayo', hora:'19:00', gf:null, gc:null },
+  { num:24, rival:'Logia Masonica', casa:true, campoId:3, pista:'', dia:15, mes:'Mayo', hora:'19:00', gf:null, gc:null },
+  { num:25, rival:'Racing Sanse', casa:false, campoId:1, pista:'', dia:22, mes:'Mayo', hora:'19:00', gf:null, gc:null },
+  { num:26, rival:'Sanse 04', casa:true, campoId:3, pista:'', dia:29, mes:'Mayo', hora:'19:00', gf:null, gc:null }
 ];
 
 const EQUIPOS = [
-  ['Perro Sanse F.C.', '#FF2E88', true], ['Los Arroyos FS', '#E4572E'], ['Racing Club Sanse', '#3D8BFD'],
-  ['CD Baviera', '#7C5CFF'], ['Sporting Reyes', '#2FA8A0'], ['Real Fuente del Fresno', '#F5C518'],
-  ['Atlético Tempranales', '#9AA0A6'], ['Veteranos Colmenar', '#5C8A3A'], ['AD Tempranales B', '#B06C4B'],
-  ['CF Dehesa Vieja', '#6D6D7A']
+  ['Perro Sanse F.C.', '#FF2E88', true], ['Birrareal', '#F5C518'], ['Deportivo Yan', '#3D8BFD'],
+  ['FC Salvatierra de Santiago', '#2E9E4F'], ['GDD', '#C9A227'], ['Logia Masonica', '#1E3A6E'],
+  ['Racing Sanse', '#E4404A'], ['Sabadete FC', '#8B1E3F'], ['Sanse 04', '#C8102E'],
+  ['Sant Francis F.C (F7 SS)', '#E4572E'], ['Sobrasada Team', '#7A1F2B'], ['Sportium de Gijon', '#B8860B'],
+  ['Teresilabos', '#B08D57'], ['UD Sin Derechos', '#6D6D7A']
 ];
 const CLASIFICACION = EQUIPOS.map(([nombre, color, nuestro]) => ({
   nombre, color, nuestro: !!nuestro, pj:0, g:0, e:0, p:0, gf:0, gc:0, racha:[]
@@ -2891,6 +2930,33 @@ function rejilla(maximo, pasos, formato) {
   return lineas;
 }
 
+// Escudos de la liga. Se buscan por nombre normalizado (sin tildes, espacios
+// ni mayúsculas), así da igual cómo venga escrito desde el ayuntamiento.
+// "redondo": los JPG vienen como círculo sobre fondo, se recortan en círculo.
+const ESCUDOS = [
+  { claves:['perrosanse','pedrosanse'], src:'uploads/Escudo.jpg', redondo:true },
+  { claves:['birrareal'], src:'escudos/Birrareal.jpeg', redondo:true },
+  { claves:['salvatierra'], src:'escudos/Salvatierra.png' },
+  { claves:['gdd'], src:'escudos/GDD.png' },
+  { claves:['logiamasonica'], src:'escudos/LogiaMasonica.png' },
+  { claves:['racingsanse'], src:'escudos/RacingSanse.jpeg', redondo:true },
+  { claves:['sabadete'], src:'escudos/Sabadete.jpeg', redondo:true },
+  { claves:['sanse04'], src:'escudos/Sanse04.png' },
+  { claves:['santfrancis'], src:'escudos/SantFrancis.jpeg', redondo:true },
+  { claves:['sobrasada'], src:'escudos/Sobrasada.jpeg', redondo:true },
+  { claves:['sportium'], src:'escudos/Sportium.png' },
+  { claves:['teresilabo'], src:'escudos/Teresilabos.jpeg', redondo:true },
+  { claves:['sinderechos'], src:'escudos/UDSinDerechos.png' }
+];
+function normalizarEquipo(n) {
+  return String(n || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+function escudoDe(nombre) {
+  const n = normalizarEquipo(nombre);
+  if (!n) return null;
+  return ESCUDOS.find(e => e.claves.some(k => n.indexOf(k) !== -1)) || null;
+}
+
 function iniciales(n) { return (n || '').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase(); }
 /** Iniciales de equipo: si dos empiezan igual, se añade una letra más
  *  para poder distinguirlos sin depender del color. */
@@ -2976,7 +3042,7 @@ class Component extends DCLogic {
     estadoAvisos:'default', appInstalada:false, pushIncompleto:false, avisoInstalar:'', resultadoEnvio:'', envioOk:false,
     destinoAviso:'todos', jugadorAviso:null, enviandoAviso:false, tituloAviso:'', cuerpoAviso:'', guiaSel:'ios',
     nuevaMultaTipo:'tarde', nuevaMultaJugador:null, nuevaMultaImporte:2, nuevaMultaNota:'',
-    economia:ECONOMIA_POR_DEFECTO, cobroJugador:null, cobroImporte:'', cobroConcepto:'cuota',
+    economia:ECONOMIA_POR_DEFECTO, editandoCaja:null, cobroJugador:null, cobroImporte:'', cobroConcepto:'cuota',
     seleccion:null, ficha:null,
     orden:'goles', vistaStats:'tabla', jugadorSel:null, compClave:'goles', votoPorJornada:{}, notas:[], misNotas:{}, vistaConv:'fotos', vistaMvp:'votacion',
     calVista:'lista', calMes:'todos', calJornada:'todas', rivalNum:null,
@@ -3596,6 +3662,17 @@ class Component extends DCLogic {
     const base = 'width:' + s + 'px;height:' + s + 'px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:' + Math.round(s / 2.8) + 'px;color:#8A8A96;background-color:#1C1C22;border:2px solid #2A2A33;overflow:hidden;';
     return p && p.foto ? base + 'background-image:url("' + p.foto + '");background-size:cover;background-position:top center;color:transparent;border-color:' + this.accent() : base;
   }
+  /** Escudo del equipo si lo tenemos; si no, el cuadrado de color de siempre. */
+  badgeEquipo(nombre, color, size) {
+    const s = size || 34;
+    const e = escudoDe(nombre);
+    if (!e) return this.badge('', color, s);
+    return 'width:' + s + 'px;height:' + s + 'px;flex:none;background-image:url("' + e.src + '");background-repeat:no-repeat;background-position:center;'
+      + (e.redondo ? 'background-size:cover;border-radius:50%;' : 'background-size:contain;')
+      + 'color:transparent;font-size:0;filter:drop-shadow(0 2px 6px rgba(0,0,0,.5))';
+  }
+  siglaSiNoHayEscudo(nombre, sigla) { return escudoDe(nombre) ? '' : sigla; }
+
   badge(txt, color, size) {
     const s = size || 34;
     return 'width:' + s + 'px;height:' + s + 'px;border-radius:10px;flex:none;display:flex;align-items:center;justify-content:center;font-family:Anton,sans-serif;font-size:' + Math.round(s / 2.6) + 'px;color:#0B0B0D;background:' + color;
@@ -3710,6 +3787,9 @@ class Component extends DCLogic {
     const conv = JUG.filter(p => estadosJ[p.id] === 'si');
     const activos = JUG.filter(p => p.estado !== 'baja');
     const jugados = st.partidos.filter(p => p.gf !== null);
+    const movimientosCaja = (st.multas || []).filter(m => m.pagada).reduce((s, m) => s + Number(m.importe || 0), 0)
+      + (st.pagos || []).reduce((s, p) => s + Number(p.importe || 0), 0);
+    const totalCajaCalc = Math.round((Number((st.economia || {}).saldoBase) || 0) + movimientosCaja);
     // Meses de temporada ya transcurridos, para las cuotas mensuales.
     const mesesJugados = Math.max(1, jugados.reduce((acc, p) => acc.indexOf(p.mes) === -1 ? acc.concat([p.mes]) : acc, []).length);
     const slotsDef = FORMACIONES[aliJ.formacion] || FORMACIONES['1-2-3-1'];
@@ -3844,7 +3924,8 @@ class Component extends DCLogic {
         localia: j.casa ? 'Local' : 'Fuera',
         enfrentamiento: j.casa ? 'Perro Sanse vs ' + j.rival : j.rival + ' vs Perro Sanse',
         resultado: jugado ? j.gf + ' - ' + j.gc : 'Por jugar',
-        rivalInicial: iniciales(j.rival), rivalBadge: this.badge('', d.r.color, 34),
+        rivalInicial: this.siglaSiNoHayEscudo(j.rival, iniciales(j.rival)), rivalBadge: this.badgeEquipo(j.rival, d.r.color, 34),
+        rivalBadgeGrande: this.badgeEquipo(j.rival, d.r.color, 56), nuestroBadgeGrande: this.badgeEquipo('Perro Sanse', '#FF2E88', 56),
         campoInicial: c.nombre.charAt(0), campoBadge: this.badge('', c.color, 26),
         maps: this.mapsDe(c),
         pista: j.pista || '',
@@ -4825,8 +4906,8 @@ class Component extends DCLogic {
           return 'font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:12px;letter-spacing:.14em;text-transform:uppercase;padding:5px 12px;border-radius:999px;background:' + col + '22;color:' + col + ';border:1px solid ' + col;
         })(),
         jornada:acta.jornada, rival:acta.rival, fecha:acta.fecha, marcador:acta.gf + ' - ' + acta.gc,
-        gf:acta.gf, gc:acta.gc, inicial:iniciales(acta.rival),
-        rivalBadge: this.badge('', eqLiga(TABLA_LIGA, acta.rival).color, 64),
+        gf:acta.gf, gc:acta.gc, inicial:this.siglaSiNoHayEscudo(acta.rival, iniciales(acta.rival)),
+        rivalBadge: this.badgeEquipo(acta.rival, eqLiga(TABLA_LIGA, acta.rival).color, 64),
         setGf: e => this.patchActa(acta.id, { gf:this.num(e.target.value) }),
         setGc: e => this.patchActa(acta.id, { gc:this.num(e.target.value) }),
         setRival: e => this.patchActa(acta.id, { rival:e.target.value }),
@@ -5245,7 +5326,7 @@ class Component extends DCLogic {
           colE:'color:' + COL_LIGA.e, colP:'font-weight:700;color:' + COL_LIGA.p,
           colGf:'font-weight:700;color:' + COL_LIGA.gf, colGc:'color:' + COL_LIGA.gc,
         pos:i + 1, nombre:e.nombre, pj:e.pj, g:e.g, e:e.e, p:e.p, gf:e.gf, gc:e.gc, pts:pts(e),
-        inicial:siglaEquipo(e.nombre, TABLA_LIGA.map(x => x.nombre)), badge:this.badge('', e.color, 28),
+        inicial:this.siglaSiNoHayEscudo(e.nombre, siglaEquipo(e.nombre, TABLA_LIGA.map(x => x.nombre))), badge:this.badgeEquipo(e.nombre, e.color, 30),
         flecha: fl.icono, flechaTexto: fl.texto,
         flechaStyle: 'font-size:13px;text-align:center;color:' + fl.color,
         celdas: [['pj','PJ'],['g','G'],['e','E'],['p','P'],['gf','GF'],['gc','GC']].map(([k]) => ({
@@ -5490,8 +5571,20 @@ class Component extends DCLogic {
       }) })),
 
       // ---- Totales de la caja ----
-      totalCaja: (st.multas || []).filter(m => m.pagada).reduce((s, m) => s + Number(m.importe || 0), 0)
-        + (st.pagos || []).reduce((s, p) => s + Number(p.importe || 0), 0),
+      totalCaja: totalCajaCalc,
+      editandoCaja: st.editandoCaja != null,
+      noEditandoCaja: st.editandoCaja == null,
+      valorCajaEdit: st.editandoCaja != null ? st.editandoCaja : '',
+      setValorCaja: e => this.setState({ editandoCaja: e.target.value }),
+      abrirEditarCaja: () => this.setState({ editandoCaja: String(totalCajaCalc) }),
+      cancelarEditarCaja: () => this.setState({ editandoCaja: null }),
+      guardarCaja: () => {
+        const objetivo = this.num(st.editandoCaja);
+        // Se guarda como saldo de partida: los cobros y multas futuros
+        // siguen sumando encima del total que fijes ahora.
+        const base = objetivo - movimientosCaja;
+        this.setState(s => ({ editandoCaja: null, economia: Object.assign({}, s.economia, { saldoBase: base }) }));
+      },
       pendienteCaja: (() => {
         const multas = (st.multas || []).filter(m => !m.pagada).reduce((s, m) => s + Number(m.importe || 0), 0);
         const porConceptos = (st.economia.conceptos || []).reduce((s, c) => {
