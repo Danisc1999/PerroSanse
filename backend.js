@@ -180,7 +180,7 @@ export async function cargar() {
   ]);
 
   const partidos = (par.data || []).map(p => ({
-    num: p.num, rival: p.rival, casa: p.casa, campoId: p.campo_id,
+    num: p.num, rival: /rotonda/i.test(p.rival || '') ? 'FC Salvatierra de Santiago' : p.rival, casa: p.casa, campoId: p.campo_id,
     dia: p.dia, mes: p.mes, hora: p.hora, gf: p.gf, gc: p.gc, pista: p.pista || ''
   }));
   const convPorJornada = {};
@@ -255,10 +255,15 @@ export async function cargar() {
     convPorJornada,
     aliPorJornada,
     clasificacion: (() => {
+      // Nombres antiguos o mal escritos → nombre oficial. Se aplica al cargar,
+      // así aunque una pestaña vieja vuelva a guardar el nombre antiguo, la
+      // app siempre lo muestra (y lo vuelve a guardar) bien.
+      const OFICIAL = n => /rotonda/i.test(n) ? 'FC Salvatierra de Santiago'
+        : /pedro\s*sanse/i.test(n) ? 'Perro Sanse F.C.' : n;
       // Un solo equipo por nombre, quedándose con el que tenga más partidos:
       // así una base con filas repetidas deja de duplicar la liga entera.
       const porNombre = {};
-      (cla.data || []).forEach(e => {
+      (cla.data || []).map(e => Object.assign({}, e, { nombre: OFICIAL(e.nombre) })).forEach(e => {
         const previa = porNombre[e.nombre];
         if (!previa || (e.pj || 0) > (previa.pj || 0) || ((e.pj || 0) === (previa.pj || 0) && e.id < previa.id)) {
           porNombre[e.nombre] = e;
