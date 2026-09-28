@@ -940,7 +940,26 @@
                     <option value="{{ n.v }}">{{ n.v }}</option>
                   </sc-for>
                 </select>
-                <input value="{{ e.detalle }}" onChange="{{ e.setDetalle }}" style="{{ inputFlexLargo }}"></input>
+                <select value="{{ e.tipo }}" onChange="{{ e.setTipo }}" style="{{ inputFlexLargo }}">
+                  <option value="Gol">⚽ Gol</option>
+                  <option value="Gol de penalti">⚽ Gol de penalti</option>
+                  <option value="Gol de falta">⚽ Gol de falta</option>
+                  <option value="Gol en propia">🎁 Gol en propia del rival (a favor)</option>
+                  <option value="Gol en propia nuestro">🙈 Gol en propia nuestro (en contra)</option>
+                  <option value="Amarilla">🟨 Amarilla</option>
+                  <option value="Roja">🟥 Roja</option>
+                  <option value="Otro">✏️ Otro</option>
+                </select>
+                <sc-if value="{{ e.esGol }}">
+                  <select value="{{ e.asistente }}" onChange="{{ e.setAsistente }}" style="{{ inputFlexLargo }}">
+                    <sc-for list="{{ e.opcionesAsistente }}" as="o" hint-placeholder-count="16">
+                      <option value="{{ o.v }}">🅰️ {{ o.label }}</option>
+                    </sc-for>
+                  </select>
+                </sc-if>
+                <sc-if value="{{ e.esOtro }}">
+                  <input value="{{ e.detalle }}" onChange="{{ e.setDetalle }}" placeholder="Describe el suceso" style="{{ inputFlexLargo }}"></input>
+                </sc-if>
                 <button onClick="{{ e.borrar }}" style="background:transparent;border:1px solid #3A2430;color:#FF6FAC;border-radius:8px;padding:6px 10px;cursor:pointer">×</button>
               </sc-if>
             </div>
@@ -958,11 +977,17 @@
                 </div>
               </div>
               <sc-if value="{{ noEsAdmin }}">
+                <sc-if value="{{ m.esPortero }}">
+                  <div style="font-size:12px;color:#B06C4B;white-space:nowrap">🥅 {{ m.geTexto }}</div>
+                </sc-if>
                 <div style="font-size:13px;color:#8A8A96;width:56px;text-align:right">{{ m.min }}'</div>
                 <div style="{{ m.notaStyle }}">{{ m.nota }}</div>
               </sc-if>
               <sc-if value="{{ esAdmin }}">
                 <input value="{{ m.min }}" onChange="{{ m.setMin }}" style="{{ miniInputStyle }}"></input>
+                <sc-if value="{{ m.esPortero }}">
+                  <input value="{{ m.ge }}" onChange="{{ m.setGe }}" placeholder="{{ m.gePlaceholder }}" title="Goles encajados por este portero" style="{{ m.geStyle }}"></input>
+                </sc-if>
                 <input value="{{ m.nota }}" onChange="{{ m.setNota }}" style="{{ m.notaInputStyle }}"></input>
               </sc-if>
             </div>
@@ -1331,6 +1356,19 @@
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:16px;margin-top:16px">
           <div style="background:#101014;border:1px solid #26262E;border-radius:18px;padding:16px">
             <div style="font-family:'Barlow Condensed',sans-serif;letter-spacing:.2em;font-size:12px;color:#8A8A96;text-transform:uppercase;margin-bottom:10px">{{ textoVoto }}</div>
+          <sc-if value="{{ noConvocadoVoto }}">
+            <div style="background:#1A1410;border:1px solid #F5C518;border-radius:12px;padding:12px;margin-bottom:12px;font-size:13px;color:#EDEDF2">Esta jornada votan y puntúan los que jugaron. Si fuiste a ver el partido, pídele al míster que te deje votar.</div>
+          </sc-if>
+          <sc-if value="{{ verVotantesExtra }}">
+            <div style="background:#10161A;border:1px solid #1F3A36;border-radius:12px;padding:12px;margin-bottom:12px">
+              <div style="font-size:13px;color:#C9C9D2">🗳️ Votan los que jugaron. Toca a quien también pueda votar:</div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">
+                <sc-for list="{{ votantesExtra }}" as="v" hint-placeholder-count="6">
+                  <button onClick="{{ v.go }}" style="{{ v.style }}">{{ v.nombre }}</button>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
           <sc-if value="{{ sinFichaVinculada }}">
             <div style="background:#1A1410;border:1px solid #F5C518;border-radius:12px;padding:12px;margin-bottom:12px;font-size:13px;color:#EDEDF2">Tu cuenta no está vinculada a una ficha de jugador, así que puedes ver la votación pero no votar ni poner notas.</div>
           </sc-if>
@@ -3227,6 +3265,40 @@ function hoyTexto() {
 
 // Calendario oficial de TODA la liga (los 7 partidos de cada jornada),
 // sacado del documento del Ayuntamiento. Sirve para la quiniela.
+/** Goles encajados de cada portero en un acta.
+ *  - Si en la fila del portero se apuntó cuántos encajó, se usa eso.
+ *  - Si jugó un solo portero, se lleva todos los goles en contra.
+ *  - Si jugaron varios sin apuntarlo, se reparten según los minutos.
+ *  Portería a cero: 0 encajados habiendo jugado al menos media parte. */
+function encajadosPorPortero(acta, jugadores) {
+  const porteros = (acta.minutos || []).filter(m => {
+    const j = (jugadores || []).find(x => x.id === m.id);
+    return j && j.pos === 'POR' && m.min > 0;
+  });
+  const out = {};
+  if (!porteros.length) return out;
+  const total = acta.gc || 0;
+  const apuntados = porteros.filter(m => m.ge !== undefined && m.ge !== null && m.ge !== '');
+  const sumaApuntada = apuntados.reduce((s, m) => s + Number(m.ge || 0), 0);
+  const sinApuntar = porteros.filter(m => apuntados.indexOf(m) === -1);
+  const minsSin = sinApuntar.reduce((s, m) => s + m.min, 0) || 1;
+  let resto = Math.max(0, total - sumaApuntada);
+  porteros.forEach((m, k) => {
+    let ge;
+    if (apuntados.indexOf(m) !== -1) ge = Number(m.ge || 0);
+    else if (sinApuntar.length === 1) ge = resto;
+    else {
+      const esUltimo = m === sinApuntar[sinApuntar.length - 1];
+      ge = esUltimo ? resto : Math.round((total - sumaApuntada) * m.min / minsSin);
+      if (!esUltimo) resto -= ge;
+    }
+    out[m.id] = { ge: Math.max(0, ge), p0: ge === 0 && m.min >= 25 };
+  });
+  return out;
+}
+
+const TIPOS_EVENTO = ['Gol', 'Gol de penalti', 'Gol de falta', 'Gol en propia', 'Gol en propia nuestro', 'Amarilla', 'Roja', 'Otro'];
+
 const CAL_LIGA = [{"n":1,"p":[["BIRRAREAL","FC SALVATIERRA DE SANTIAGO"],["SPORTIUM DE GIJON","LOGIA MASONICA"],["SANT FRANCIS F.C (F7 SS)","RACING SANSE"],["SABADETE FC","SANSE 04"],["PEDRO SANSE","SOBRASADA TEAM"],["GDD","TERESILABOS"],["UD SIN DERECHOS","DEPORTIVO YAN"]]},{"n":2,"p":[["FC SALVATIERRA DE SANTIAGO","UD SIN DERECHOS"],["LOGIA MASONICA","BIRRAREAL"],["RACING SANSE","SPORTIUM DE GIJON"],["SANSE 04","SANT FRANCIS F.C (F7 SS)"],["SOBRASADA TEAM","SABADETE FC"],["TERESILABOS","PEDRO SANSE"],["DEPORTIVO YAN","GDD"]]},{"n":3,"p":[["FC SALVATIERRA DE SANTIAGO","LOGIA MASONICA"],["BIRRAREAL","RACING SANSE"],["SPORTIUM DE GIJON","SANSE 04"],["SANT FRANCIS F.C (F7 SS)","SOBRASADA TEAM"],["SABADETE FC","TERESILABOS"],["PEDRO SANSE","DEPORTIVO YAN"],["UD SIN DERECHOS","GDD"]]},{"n":4,"p":[["LOGIA MASONICA","UD SIN DERECHOS"],["RACING SANSE","FC SALVATIERRA DE SANTIAGO"],["SANSE 04","BIRRAREAL"],["SOBRASADA TEAM","SPORTIUM DE GIJON"],["TERESILABOS","SANT FRANCIS F.C (F7 SS)"],["DEPORTIVO YAN","SABADETE FC"],["GDD","PEDRO SANSE"]]},{"n":5,"p":[["LOGIA MASONICA","RACING SANSE"],["FC SALVATIERRA DE SANTIAGO","SANSE 04"],["BIRRAREAL","SOBRASADA TEAM"],["SPORTIUM DE GIJON","TERESILABOS"],["SANT FRANCIS F.C (F7 SS)","DEPORTIVO YAN"],["SABADETE FC","GDD"],["UD SIN DERECHOS","PEDRO SANSE"]]},{"n":6,"p":[["RACING SANSE","UD SIN DERECHOS"],["SANSE 04","LOGIA MASONICA"],["SOBRASADA TEAM","FC SALVATIERRA DE SANTIAGO"],["TERESILABOS","BIRRAREAL"],["DEPORTIVO YAN","SPORTIUM DE GIJON"],["GDD","SANT FRANCIS F.C (F7 SS)"],["PEDRO SANSE","SABADETE FC"]]},{"n":7,"p":[["RACING SANSE","SANSE 04"],["LOGIA MASONICA","SOBRASADA TEAM"],["FC SALVATIERRA DE SANTIAGO","TERESILABOS"],["BIRRAREAL","DEPORTIVO YAN"],["SPORTIUM DE GIJON","GDD"],["SANT FRANCIS F.C (F7 SS)","PEDRO SANSE"],["UD SIN DERECHOS","SABADETE FC"]]},{"n":8,"p":[["SANSE 04","UD SIN DERECHOS"],["DEPORTIVO YAN","FC SALVATIERRA DE SANTIAGO"],["TERESILABOS","LOGIA MASONICA"],["SOBRASADA TEAM","RACING SANSE"],["GDD","BIRRAREAL"],["PEDRO SANSE","SPORTIUM DE GIJON"],["SABADETE FC","SANT FRANCIS F.C (F7 SS)"]]},{"n":9,"p":[["SANSE 04","SOBRASADA TEAM"],["RACING SANSE","TERESILABOS"],["LOGIA MASONICA","DEPORTIVO YAN"],["FC SALVATIERRA DE SANTIAGO","GDD"],["BIRRAREAL","PEDRO SANSE"],["SPORTIUM DE GIJON","SABADETE FC"],["UD SIN DERECHOS","SANT FRANCIS F.C (F7 SS)"]]},{"n":10,"p":[["SANT FRANCIS F.C (F7 SS)","SPORTIUM DE GIJON"],["TERESILABOS","SANSE 04"],["DEPORTIVO YAN","RACING SANSE"],["GDD","LOGIA MASONICA"],["PEDRO SANSE","FC SALVATIERRA DE SANTIAGO"],["SABADETE FC","BIRRAREAL"],["SOBRASADA TEAM","UD SIN DERECHOS"]]},{"n":11,"p":[["SOBRASADA TEAM","TERESILABOS"],["SANSE 04","DEPORTIVO YAN"],["RACING SANSE","GDD"],["LOGIA MASONICA","PEDRO SANSE"],["FC SALVATIERRA DE SANTIAGO","SABADETE FC"],["BIRRAREAL","SANT FRANCIS F.C (F7 SS)"],["UD SIN DERECHOS","SPORTIUM DE GIJON"]]},{"n":12,"p":[["UD SIN DERECHOS","TERESILABOS"],["DEPORTIVO YAN","SOBRASADA TEAM"],["GDD","SANSE 04"],["PEDRO SANSE","RACING SANSE"],["SABADETE FC","LOGIA MASONICA"],["SANT FRANCIS F.C (F7 SS)","FC SALVATIERRA DE SANTIAGO"],["SPORTIUM DE GIJON","BIRRAREAL"]]},{"n":13,"p":[["TERESILABOS","DEPORTIVO YAN"],["SOBRASADA TEAM","GDD"],["SANSE 04","PEDRO SANSE"],["RACING SANSE","SABADETE FC"],["LOGIA MASONICA","SANT FRANCIS F.C (F7 SS)"],["FC SALVATIERRA DE SANTIAGO","SPORTIUM DE GIJON"],["BIRRAREAL","UD SIN DERECHOS"]]},{"n":14,"p":[["FC SALVATIERRA DE SANTIAGO","BIRRAREAL"],["LOGIA MASONICA","SPORTIUM DE GIJON"],["RACING SANSE","SANT FRANCIS F.C (F7 SS)"],["SANSE 04","SABADETE FC"],["SOBRASADA TEAM","PEDRO SANSE"],["TERESILABOS","GDD"],["DEPORTIVO YAN","UD SIN DERECHOS"]]},{"n":15,"p":[["UD SIN DERECHOS","FC SALVATIERRA DE SANTIAGO"],["BIRRAREAL","LOGIA MASONICA"],["SPORTIUM DE GIJON","RACING SANSE"],["SANT FRANCIS F.C (F7 SS)","SANSE 04"],["SABADETE FC","SOBRASADA TEAM"],["PEDRO SANSE","TERESILABOS"],["GDD","DEPORTIVO YAN"]]},{"n":16,"p":[["LOGIA MASONICA","FC SALVATIERRA DE SANTIAGO"],["RACING SANSE","BIRRAREAL"],["SANSE 04","SPORTIUM DE GIJON"],["SOBRASADA TEAM","SANT FRANCIS F.C (F7 SS)"],["TERESILABOS","SABADETE FC"],["DEPORTIVO YAN","PEDRO SANSE"],["GDD","UD SIN DERECHOS"]]},{"n":17,"p":[["UD SIN DERECHOS","LOGIA MASONICA"],["FC SALVATIERRA DE SANTIAGO","RACING SANSE"],["BIRRAREAL","SANSE 04"],["SPORTIUM DE GIJON","SOBRASADA TEAM"],["SANT FRANCIS F.C (F7 SS)","TERESILABOS"],["SABADETE FC","DEPORTIVO YAN"],["PEDRO SANSE","GDD"]]},{"n":18,"p":[["RACING SANSE","LOGIA MASONICA"],["SANSE 04","FC SALVATIERRA DE SANTIAGO"],["SOBRASADA TEAM","BIRRAREAL"],["TERESILABOS","SPORTIUM DE GIJON"],["DEPORTIVO YAN","SANT FRANCIS F.C (F7 SS)"],["GDD","SABADETE FC"],["PEDRO SANSE","UD SIN DERECHOS"]]},{"n":19,"p":[["UD SIN DERECHOS","RACING SANSE"],["LOGIA MASONICA","SANSE 04"],["FC SALVATIERRA DE SANTIAGO","SOBRASADA TEAM"],["BIRRAREAL","TERESILABOS"],["SPORTIUM DE GIJON","DEPORTIVO YAN"],["SANT FRANCIS F.C (F7 SS)","GDD"],["SABADETE FC","PEDRO SANSE"]]},{"n":20,"p":[["SANSE 04","RACING SANSE"],["SOBRASADA TEAM","LOGIA MASONICA"],["TERESILABOS","FC SALVATIERRA DE SANTIAGO"],["DEPORTIVO YAN","BIRRAREAL"],["GDD","SPORTIUM DE GIJON"],["PEDRO SANSE","SANT FRANCIS F.C (F7 SS)"],["SABADETE FC","UD SIN DERECHOS"]]},{"n":21,"p":[["UD SIN DERECHOS","SANSE 04"],["RACING SANSE","SOBRASADA TEAM"],["LOGIA MASONICA","TERESILABOS"],["FC SALVATIERRA DE SANTIAGO","DEPORTIVO YAN"],["BIRRAREAL","GDD"],["SPORTIUM DE GIJON","PEDRO SANSE"],["SANT FRANCIS F.C (F7 SS)","SABADETE FC"]]},{"n":22,"p":[["SOBRASADA TEAM","SANSE 04"],["TERESILABOS","RACING SANSE"],["DEPORTIVO YAN","LOGIA MASONICA"],["GDD","FC SALVATIERRA DE SANTIAGO"],["PEDRO SANSE","BIRRAREAL"],["SABADETE FC","SPORTIUM DE GIJON"],["SANT FRANCIS F.C (F7 SS)","UD SIN DERECHOS"]]},{"n":23,"p":[["UD SIN DERECHOS","SOBRASADA TEAM"],["SANSE 04","TERESILABOS"],["RACING SANSE","DEPORTIVO YAN"],["LOGIA MASONICA","GDD"],["FC SALVATIERRA DE SANTIAGO","PEDRO SANSE"],["BIRRAREAL","SABADETE FC"],["SPORTIUM DE GIJON","SANT FRANCIS F.C (F7 SS)"]]},{"n":24,"p":[["TERESILABOS","SOBRASADA TEAM"],["DEPORTIVO YAN","SANSE 04"],["GDD","RACING SANSE"],["PEDRO SANSE","LOGIA MASONICA"],["SABADETE FC","FC SALVATIERRA DE SANTIAGO"],["SANT FRANCIS F.C (F7 SS)","BIRRAREAL"],["SPORTIUM DE GIJON","UD SIN DERECHOS"]]},{"n":25,"p":[["TERESILABOS","UD SIN DERECHOS"],["SOBRASADA TEAM","DEPORTIVO YAN"],["SANSE 04","GDD"],["RACING SANSE","PEDRO SANSE"],["LOGIA MASONICA","SABADETE FC"],["FC SALVATIERRA DE SANTIAGO","SANT FRANCIS F.C (F7 SS)"],["BIRRAREAL","SPORTIUM DE GIJON"]]},{"n":26,"p":[["DEPORTIVO YAN","TERESILABOS"],["SANT FRANCIS F.C (F7 SS)","LOGIA MASONICA"],["PEDRO SANSE","SANSE 04"],["SABADETE FC","RACING SANSE"],["GDD","SOBRASADA TEAM"],["SPORTIUM DE GIJON","FC SALVATIERRA DE SANTIAGO"],["UD SIN DERECHOS","BIRRAREAL"]]}];
 
 /** Encuentra en la clasificación el equipo que corresponde a un nombre
@@ -3790,19 +3862,18 @@ class Component extends DCLogic {
         const t = (ev.detalle || '').toLowerCase();
         if (id) {
           const d = dame(id);
-          if (t.indexOf('gol') !== -1) d.goles++;
+          if (t.indexOf('gol') !== -1 && t.indexOf('propia') === -1) d.goles++;
           if (t.indexOf('amarilla') !== -1) d.ta++;
           if (t.indexOf('roja') !== -1) d.tr++;
         }
         const m = t.match(/asist\.?\s*([^,·]+)/);
         if (m) { const aid = buscarId(m[1]); if (aid) dame(aid).asis++; }
       });
-      (a.minutos || []).forEach(m => {
-        const j = this.state.jugadores.find(x => x.id === m.id);
-        if (!j || j.pos !== 'POR' || !m.min) return;
-        const d = dame(m.id);
-        d.ge = (d.ge || 0) + (a.gc || 0);
-        if (a.gc === 0) d.p0++;
+      const reparto = encajadosPorPortero(a, this.state.jugadores);
+      Object.keys(reparto).forEach(id => {
+        const r = reparto[id], d = dame(Number(id));
+        d.ge = (d.ge || 0) + r.ge;
+        if (r.p0) d.p0++;
       });
     });
 
@@ -4164,6 +4235,11 @@ class Component extends DCLogic {
     const ultimaActa = actasOrd.length ? actasOrd[actasOrd.length - 1] : null;
     const jornadaViva = ultimaActa ? ultimaActa.jornada : 0;
     const mvpCerrado = !!(ultimaActa && ultimaActa.mvp_id);
+    // Votan los que jugaron esa jornada, más los que el míster autorice
+    // (por ejemplo, alguien que no jugó pero vino a ver el partido).
+    const extraVotan = (ultimaActa && ultimaActa.votantes_extra) || [];
+    const jugaronIds = ultimaActa ? (ultimaActa.minutos || []).filter(m => m.min > 0).map(m => m.id) : [];
+    const puedoVotar = admin || (miFicha !== null && (jugaronIds.indexOf(miFicha) !== -1 || extraVotan.indexOf(miFicha) !== -1));
     const convVotacion = ultimaActa
       ? (ultimaActa.minutos || []).map(m => JUG.find(j => j.id === m.id)).filter(Boolean)
       : [];
@@ -4198,8 +4274,10 @@ class Component extends DCLogic {
       const asi = acta ? (acta.eventos || []).filter(e => new RegExp('asist\\.?\\s*' + p.nombre, 'i').test(e.detalle)).length : 0;
       const ta = acta ? (acta.eventos || []).filter(e => e.jugador === p.nombre && /amarilla/i.test(e.detalle)).length : 0;
       const tr = acta ? (acta.eventos || []).filter(e => e.jugador === p.nombre && /roja/i.test(e.detalle)).length : 0;
-      const p0 = acta && p.pos === 'POR' && acta.gc === 0 ? 1 : 0;
-      const total = (media ? (media - 5) * 4 : 0) + (votos[p.id] || 0) * 5 + gol * 3 + asi * 2 + p0 * 3 - ta - tr * 3;
+      const rep = acta && p.pos === 'POR' ? (encajadosPorPortero(acta, JUG)[p.id] || null) : null;
+      const p0 = rep && rep.p0 ? 1 : 0;
+      const pp = acta ? (acta.eventos || []).filter(e => e.jugador === p.nombre && /propia nuestro/i.test(e.detalle)).length : 0;
+      const total = (media ? (media - 5) * 4 : 0) + (votos[p.id] || 0) * 5 + gol * 3 + asi * 2 + p0 * 3 - ta - tr * 3 - pp * 2;
       return { total: Math.round(Math.max(0, total) * 10) / 10, media, gol, asi, votos: votos[p.id] || 0 };
     };
 
@@ -4355,6 +4433,17 @@ class Component extends DCLogic {
       esBuzon:st.tab === 'buzon', puedeSugerir: !admin, esHistoria: st.tab === 'historia',
       puedeResponder: !esFan && miFicha !== null,
       sinFichaVinculada: !esFan && miFicha === null,
+      noConvocadoVoto: !esFan && !admin && miFicha !== null && !!jornadaViva && !mvpCerrado && !puedoVotar,
+      verVotantesExtra: admin && !!ultimaActa && !mvpCerrado,
+      votantesExtra: ultimaActa ? porDorsal(JUG.filter(j => jugaronIds.indexOf(j.id) === -1)).map(j => {
+        const si = extraVotan.indexOf(j.id) !== -1;
+        return {
+          nombre: j.nombre,
+          style: 'border-radius:999px;padding:6px 12px;font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:13px;cursor:pointer;'
+            + (si ? 'background:#2FA8A0;color:#0B0B0D;border:1px solid #2FA8A0' : 'background:transparent;color:#8A8A96;border:1px solid #33333D'),
+          go: () => this.patchActa(ultimaActa.id, { votantes_extra: si ? extraVotan.filter(x => x !== j.id) : extraVotan.concat([j.id]) })
+        };
+      }) : [],
       esInstalar: st.tab === 'instalar',
       avisosActivos: st.estadoAvisos === 'granted' && !st.pushIncompleto,
       avisosIncompletos: st.estadoAvisos === 'granted' && !!st.pushIncompleto,
@@ -5371,6 +5460,32 @@ class Component extends DCLogic {
           minInputStyle: 'width:52px;flex:none;box-sizing:border-box;background:' + col + '22;border:1px solid ' + col + ';border-radius:8px;padding:6px 4px;color:' + col + ';font-family:Anton,sans-serif;font-size:15px;text-align:center',
           iconoStyle: 'width:26px;flex:none;text-align:center;font-size:15px;filter:drop-shadow(0 0 6px ' + col + '99)',
           min:ev.min, jugador:ev.jugador, detalle:ev.detalle,
+          // Tipo de suceso y asistente se guardan dentro de «detalle» como
+          // «Gol · asist. Nombre», que es lo que lee el recálculo de estadísticas.
+          tipo: (() => {
+            const base = (ev.detalle || '').split(/\s*·\s*asist/i)[0].trim().toLowerCase();
+            // Vacío o texto libre = «Otro»; los sucesos nuevos nacen como «Gol».
+            return TIPOS_EVENTO.find(x => x.toLowerCase() === base) || 'Otro';
+          })(),
+          esGol: /gol/.test(t) && !/propia/.test(t),
+          esOtro: (() => {
+            const base = (ev.detalle || '').split(/\s*·\s*asist/i)[0].trim().toLowerCase();
+            return base === 'otro' || !TIPOS_EVENTO.some(x => x.toLowerCase() === base);
+          })(),
+          asistente: ((ev.detalle || '').match(/asist\.?\s*([^,·]+)/i) || [])[1] ? ((ev.detalle || '').match(/asist\.?\s*([^,·]+)/i) || [])[1].trim() : '',
+          setTipo: e => {
+            const v = e.target.value;
+            const asis = ((ev.detalle || '').match(/asist\.?\s*([^,·]+)/i) || [])[1];
+            // «Otro» guarda la palabra Otro hasta que se escriba la descripción.
+            const conAsis = /gol/i.test(v) && !/propia/i.test(v) && asis ? v + ' · asist. ' + asis.trim() : v;
+            this.patchActa(acta.id, { eventos: acta.eventos.map((x, j) => j === i ? Object.assign({}, x, { detalle:conAsis }) : x) });
+          },
+          setAsistente: e => {
+            const v = e.target.value;
+            const base = (ev.detalle || 'Gol').split(/\s*·\s*asist/i)[0].trim() || 'Gol';
+            this.patchActa(acta.id, { eventos: acta.eventos.map((x, j) => j === i ? Object.assign({}, x, { detalle: v ? base + ' · asist. ' + v : base }) : x) });
+          },
+          opcionesAsistente: [{ v:'', label:'Sin asistencia' }].concat(porDorsal(JUG).filter(p => p.nombre !== ev.jugador).map(p => ({ v:p.nombre, label:p.dorsal + ' · ' + p.nombre }))),
           setMin: e => this.patchActa(acta.id, { eventos: acta.eventos.map((x, j) => j === i ? Object.assign({}, x, { min:this.num(e.target.value) }) : x) }),
           setJugador: e => this.patchActa(acta.id, { eventos: acta.eventos.map((x, j) => j === i ? Object.assign({}, x, { jugador:e.target.value }) : x) }),
           setDetalle: e => this.patchActa(acta.id, { eventos: acta.eventos.map((x, j) => j === i ? Object.assign({}, x, { detalle:e.target.value }) : x) }),
@@ -5378,7 +5493,16 @@ class Component extends DCLogic {
           }; }),
         minutos: (acta.minutos.length ? acta.minutos : conv.map(p => ({ id:p.id, min:0, nota:0 }))).map((m, i) => {
           const p = JUG.find(x => x.id === m.id) || { nombre:'—' };
+          const esPortero = p.pos === 'POR';
+          const reparto = esPortero ? (encajadosPorPortero(acta, JUG)[p.id] || { ge:0 }) : null;
+          const apuntado = m.ge !== undefined && m.ge !== null && m.ge !== '';
           return { nombre:p.nombre, min:m.min, nota:m.nota,
+            esPortero,
+            ge: apuntado ? m.ge : '',
+            gePlaceholder: reparto ? '🥅 ' + reparto.ge : '🥅',
+            geTexto: reparto ? reparto.ge + ' encajados' : '',
+            geStyle: 'width:58px;box-sizing:border-box;background:#B06C4B22;border:1px solid #B06C4B;border-radius:8px;padding:6px 4px;color:#E0A07F;font-family:Anton,sans-serif;font-size:15px;text-align:center',
+            setGe: e => { const v = e.target.value; this.patchActa(acta.id, { minutos: acta.minutos.map((x, j) => j === i ? Object.assign({}, x, { ge: v === '' ? null : this.num(v) }) : x) }); },
             iniciales: p.foto ? '' : iniciales(p.nombre), avatarStyle: this.avatar(p, 26),
             barraStyle: 'height:5px;border-radius:5px;width:' + Math.min(100, Math.round((m.min || 0) / 50 * 100)) + '%;background:linear-gradient(90deg,#2FA8A055,#2FA8A0);transition:width .9s cubic-bezier(.22,.9,.25,1)',
             notaStyle:'width:44px;text-align:center;font-family:Anton,sans-serif;font-size:15px;border-radius:8px;padding:3px 0;background:' + (m.nota >= 7.5 ? ac : '#1C1C22') + ';color:' + (m.nota >= 7.5 ? '#0B0B0D' : '#C9C9D2'),
@@ -5810,7 +5934,7 @@ class Component extends DCLogic {
             n, elegido: mia === n,
             style: 'width:32px;height:32px;border-radius:8px;border:1px solid ' + (mia === n ? ac : '#2A2A33') + ';background:' + (mia === n ? ac : '#16161C') + ';color:' + (mia === n ? '#0B0B0D' : '#8A8A96') + ';font-weight:700;font-size:13px;cursor:pointer',
             go: () => {
-              if (mvpCerrado || esFan || miFicha === null) return;
+              if (mvpCerrado || esFan || miFicha === null || !puedoVotar) return;
               this.setState(s => {
                 const j = Object.assign({}, (s.misNotas || {})[jornadaViva] || {});
                 if (j[p.id] === n) delete j[p.id]; else j[p.id] = n;
@@ -5837,7 +5961,15 @@ class Component extends DCLogic {
       cerrarMvp: async () => {
         if (!ranked.length || !ultimaActa) return;
         const ganador = ranked[0].p;
-        this.patchActa(ultimaActa.id, { mvp_id: ganador.id });
+        // Al cerrar, la nota del acta de cada jugador pasa a ser la media que
+        // le han puesto sus compañeros (si el míster no puso ya una a mano).
+        // Así las estadísticas usan las notas reales de la votación.
+        const minutosConNota = (ultimaActa.minutos || []).map(m => {
+          const media = mediaNota(m.id);
+          return (!m.nota && media) ? Object.assign({}, m, { nota: Math.round(media * 10) / 10 }) : m;
+        });
+        this.patchActa(ultimaActa.id, { mvp_id: ganador.id, minutos: minutosConNota });
+        setTimeout(() => this.recalcular(), 0);
         const base = { tipo:'mvp', fecha:hoyTexto(),
           titulo:'MVP: ' + ganador.nombre,
           texto:'Elegido mejor jugador de la jornada ' + jornadaViva + ' contra ' + ultimaActa.rival + ' por votación de sus compañeros (' + ranked[0].votos + ' votos).',
@@ -5883,7 +6015,7 @@ class Component extends DCLogic {
         nombre:p.nombre, linea:p.goles + 'G · ' + p.asis + 'A',
         iniciales: p.foto ? '' : iniciales(p.nombre), avatarStyle: this.avatar(p, 34),
         votar: () => {
-          if (mvpCerrado || !jornadaViva || esFan || miFicha === null) return;
+          if (mvpCerrado || !jornadaViva || esFan || miFicha === null || !puedoVotar) return;
           this.setState(s => ({ votoPorJornada: Object.assign({}, s.votoPorJornada, { [jornadaViva]: s.votoPorJornada[jornadaViva] === p.id ? null : p.id }) }));
         },
         rowStyle:'display:flex;align-items:center;padding:10px 12px;border-radius:12px;background:#141419;border:1px solid ' + (!esFan && miVoto === p.id ? ac : '#22222A') + ';cursor:' + (esFan || mvpCerrado ? 'default' : 'pointer'),

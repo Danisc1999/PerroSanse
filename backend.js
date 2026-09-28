@@ -332,6 +332,21 @@ function filasConvocatorias(datos, jornada) {
   return filas;
 }
 
+/** Guarda las actas. Si la base aún no tiene la columna «votantes_extra»
+ *  (falta ejecutar el SQL), se guardan sin ella para no perder nada. */
+async function upsertActas(actas) {
+  const filas = actas.map(a => ({
+    id: a.id, jornada: a.jornada, rival: a.rival, fecha: a.fecha,
+    gf: a.gf, gc: a.gc, eventos: a.eventos, minutos: a.minutos, mvp_id: a.mvp_id || null,
+    votantes_extra: a.votantes_extra || []
+  }));
+  const r = await sb.from('actas').upsert(filas);
+  if (r.error && /votantes_extra/.test(r.error.message || '')) {
+    return sb.from('actas').upsert(filas.map(x => { const y = Object.assign({}, x); delete y.votantes_extra; return y; }));
+  }
+  return r;
+}
+
 function filasAlineaciones(datos, jornada) {
   const mapa = datos.aliPorJornada || { [jornada]: { formacion: datos.formacion, once: datos.once } };
   return Object.keys(mapa).map(num => ({
@@ -475,10 +490,7 @@ export async function guardar(datos) {
         num: p.num, rival: p.rival, casa: p.casa, campo_id: p.campoId, pista: p.pista || null,
         dia: p.dia, mes: p.mes, hora: p.hora, gf: p.gf, gc: p.gc
       }))),
-      sb.from('actas').upsert((datos.actas || []).map(a => ({
-        id: a.id, jornada: a.jornada, rival: a.rival, fecha: a.fecha,
-        gf: a.gf, gc: a.gc, eventos: a.eventos, minutos: a.minutos, mvp_id: a.mvp_id || null
-      }))),
+      upsertActas(datos.actas || []),
       sb.from('avisos').upsert(datos.avisos || []),
       sb.from('alineaciones').upsert(filasAlineaciones(datos, jornada)),
       sb.from('convocatorias').upsert(filasConvocatorias(datos, jornada)),
