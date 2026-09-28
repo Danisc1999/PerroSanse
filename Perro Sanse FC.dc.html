@@ -698,6 +698,14 @@
           </sc-if>
         </div>
       </div>
+      <sc-if value="{{ hayOncesAnteriores }}">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px;background:#10161A;border:1px solid #1F3A36;border-radius:12px;padding:10px 14px">
+          <div style="font-size:13px;color:#C9C9D2">📋 Alineaciones guardadas:</div>
+          <sc-for list="{{ oncesAnteriores }}" as="o" hint-placeholder-count="2">
+            <button onClick="{{ o.go }}" style="{{ o.style }}">{{ o.label }}</button>
+          </sc-for>
+        </div>
+      </sc-if>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:16px;margin-top:16px;padding-bottom:{{ huecoCampo }}">
         <div ref="{{ campoRef }}" style="border-width:1px;border-style:solid;border-radius:18px;padding:16px;position:relative;aspect-ratio:3/4;min-height:380px;max-height:78vh;overflow:visible;{{ estiloCampo }}">
           <div style="position:absolute;inset:16px;border-radius:6px;{{ lineaCampo }}"></div>
@@ -5082,6 +5090,17 @@ class Component extends DCLogic {
           }
         };
       }),
+      // Jornadas que ya tienen un once guardado: acceso directo para verlas.
+      hayOncesAnteriores: Object.keys(st.aliPorJornada || {}).some(k => Number(k) !== jornadaSel && Object.keys(((st.aliPorJornada || {})[k] || {}).once || {}).length),
+      oncesAnteriores: Object.keys(st.aliPorJornada || {})
+        .filter(k => Object.keys(((st.aliPorJornada || {})[k] || {}).once || {}).length)
+        .map(Number).sort((a, b) => a - b)
+        .map(n => ({
+          label:'J' + n,
+          go: () => this.setState({ jornadaSel:n, seleccion:null }),
+          style:'border-radius:999px;padding:5px 12px;font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:13px;cursor:pointer;'
+            + (n === jornadaSel ? 'background:#2FA8A0;color:#0B0B0D;border:1px solid #2FA8A0' : 'background:transparent;color:#2FA8A0;border:1px solid #2FA8A0')
+        })),
       leyendaPos: ['POR','DEF','BAN','MC','DEL'].map(k => ({ label:POS[k], style:'color:' + POS_COLOR[k] })),
       anunciarOnce: () => this.anunciarOnce(),
       hayAnuncio: !!st.anuncio,
