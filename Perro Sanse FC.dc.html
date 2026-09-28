@@ -231,6 +231,7 @@
         <sc-if value="{{ noPuedeCambiarVista }}">
           <div style="{{ rolePillStyle }}">{{ roleLabel }}</div>
         </sc-if>
+        <button onClick="{{ abrirNovedades }}" title="Novedades de la app" style="background:transparent;border:1px solid #26262E;color:#6D6D7A;border-radius:999px;padding:6px 10px;font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:12px;letter-spacing:.06em;cursor:pointer;transition:color .2s ease,border-color .2s ease" style-hover="color:#FF2E88;border-color:#FF2E88">{{ appVersion }}</button>
         <button onClick="{{ salir }}" style="background:transparent;border:1px solid #33333D;color:#8A8A96;border-radius:999px;padding:8px 14px;font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:13px;letter-spacing:.06em;text-transform:uppercase;cursor:pointer">Salir</button>
       </div>
     </div>
@@ -512,6 +513,7 @@
                             </div>
                           </sc-if>
                         </div>
+                        <button onClick="{{ c.like }}" title="Me gusta" style="{{ c.likeStyle }}">♥ {{ c.likes }}</button>
                         <sc-if value="{{ c.puedeEditar }}">
                           <button onClick="{{ c.editar }}" title="Editar comentario" style="background:transparent;border:0;color:#6D6D7A;cursor:pointer;font-size:14px;padding:2px 4px">✎</button>
                         </sc-if>
@@ -2277,6 +2279,34 @@
         </div>
 
         <div style="max-width:520px;background:#101014;border:1px solid #26262E;border-radius:18px;padding:20px;margin-top:16px">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+            <div>
+              <div style="font-family:'Anton',sans-serif;font-size:18px;text-transform:uppercase">💗 Quién sigue a cada jugador</div>
+              <div style="font-size:12px;color:#8A8A96;margin-top:2px">Solo lo ves tú. Los jugadores ven su número de fans, no los nombres.</div>
+            </div>
+            <button onClick="{{ cargarSeguidores }}" style="background:#16161C;border:1px solid #33333D;color:#EDEDF2;border-radius:10px;padding:8px 14px;cursor:pointer;font-weight:600">{{ textoSeguidores }}</button>
+          </div>
+          <sc-if value="{{ haySeguidores }}">
+            <div style="display:flex;flex-direction:column;gap:8px;margin-top:14px">
+              <sc-for list="{{ seguidores }}" as="s" hint-placeholder-count="5">
+                <div style="background:#16161C;border:1px solid #24242C;border-radius:12px;padding:10px 12px">
+                  <div style="display:flex;align-items:center;gap:10px">
+                    <div style="{{ s.avatarStyle }}">{{ s.iniciales }}</div>
+                    <div style="flex:1;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px;text-transform:uppercase">{{ s.nombre }}</div>
+                    <div style="font-family:'Anton',sans-serif;font-size:18px;color:#FF2E88">♥ {{ s.total }}</div>
+                  </div>
+                  <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">
+                    <sc-for list="{{ s.fans }}" as="x" hint-placeholder-count="3">
+                      <div style="{{ x.style }}">{{ x.nombre }}</div>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+        </div>
+
+        <div style="max-width:520px;background:#101014;border:1px solid #26262E;border-radius:18px;padding:20px;margin-top:16px">
           <div style="font-family:'Anton',sans-serif;font-size:18px;text-transform:uppercase">🧪 Datos de ejemplo</div>
           <div style="font-size:13px;color:#8A8A96;margin-top:6px">Rellena cinco jornadas con resultados, actas y clasificación inventados para ver la app con datos. Bórralos antes de empezar la liga de verdad.</div>
           <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
@@ -2699,6 +2729,74 @@
     </div>
   </sc-if>
 
+  <sc-if value="{{ hayNovedades }}">
+    <div style="position:fixed;inset:0;background:rgba(4,4,6,.88);z-index:62;display:flex;align-items:center;justify-content:center;padding:20px">
+      <div style="width:100%;max-width:440px;background:#101014;border:1px solid #2FA8A0;border-radius:20px;padding:24px;animation:psfcEntra .42s cubic-bezier(.22,.9,.25,1) both">
+        <div style="font-family:'Barlow Condensed',sans-serif;letter-spacing:.2em;font-size:12px;color:#2FA8A0;text-transform:uppercase">Novedades en la app</div>
+        <div style="font-family:'Anton',sans-serif;font-size:26px;text-transform:uppercase;margin-top:6px;line-height:1.05">Esto es lo nuevo 🐶</div>
+          <div style="display:flex;flex-direction:column;gap:16px;margin-top:16px;max-height:52vh;overflow:auto">
+            <sc-for list="{{ novedadesNuevas }}" as="n" hint-placeholder-count="2">
+              <div>
+                <div style="display:flex;align-items:baseline;gap:8px">
+                  <div style="font-family:'Anton',sans-serif;font-size:18px;color:#FF2E88">{{ n.version }}</div>
+                  <div style="font-size:12px;color:#6D6D7A">{{ n.fecha }}</div>
+                </div>
+                <sc-for list="{{ n.secciones }}" as="sec" hint-placeholder-count="2">
+                  <sc-if value="{{ sec.hayTitulo }}">
+                    <div style="font-family:'Barlow Condensed',sans-serif;letter-spacing:.14em;font-size:12px;color:#8A8A96;text-transform:uppercase;margin-top:12px">{{ sec.titulo }}</div>
+                  </sc-if>
+                  <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
+                    <sc-for list="{{ sec.items }}" as="i" hint-placeholder-count="3">
+                      <div style="display:flex;gap:10px;align-items:flex-start;background:#16161C;border:1px solid #24242C;border-radius:12px;padding:10px 12px">
+                        <div style="color:#2FA8A0;font-size:14px;line-height:1.4">✦</div>
+                        <div style="font-size:14px;color:#DDDDE4;line-height:1.45">{{ i.texto }}</div>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-for>
+          </div>
+        <button onClick="{{ cerrarNovedades }}" style="width:100%;margin-top:18px;background:#2FA8A0;color:#0B0B0D;border:0;border-radius:12px;padding:13px;font-weight:700;font-size:15px;cursor:pointer">¡Entendido!</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ verHistorial }}">
+    <div onClick="{{ cerrarNovedades }}" style="position:fixed;inset:0;background:rgba(4,4,6,.86);z-index:62;display:flex;align-items:center;justify-content:center;padding:20px">
+      <div style="width:100%;max-width:440px;background:#101014;border:1px solid #33333D;border-radius:20px;padding:24px">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px">
+          <div style="font-family:'Anton',sans-serif;font-size:24px;text-transform:uppercase">Historial de versiones</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;color:#FF2E88">{{ appVersion }}</div>
+        </div>
+          <div style="display:flex;flex-direction:column;gap:16px;margin-top:16px;max-height:52vh;overflow:auto">
+            <sc-for list="{{ novedadesTodas }}" as="n" hint-placeholder-count="2">
+              <div>
+                <div style="display:flex;align-items:baseline;gap:8px">
+                  <div style="font-family:'Anton',sans-serif;font-size:18px;color:#FF2E88">{{ n.version }}</div>
+                  <div style="font-size:12px;color:#6D6D7A">{{ n.fecha }}</div>
+                </div>
+                <sc-for list="{{ n.secciones }}" as="sec" hint-placeholder-count="2">
+                  <sc-if value="{{ sec.hayTitulo }}">
+                    <div style="font-family:'Barlow Condensed',sans-serif;letter-spacing:.14em;font-size:12px;color:#8A8A96;text-transform:uppercase;margin-top:12px">{{ sec.titulo }}</div>
+                  </sc-if>
+                  <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
+                    <sc-for list="{{ sec.items }}" as="i" hint-placeholder-count="3">
+                      <div style="display:flex;gap:10px;align-items:flex-start;background:#16161C;border:1px solid #24242C;border-radius:12px;padding:10px 12px">
+                        <div style="color:#2FA8A0;font-size:14px;line-height:1.4">✦</div>
+                        <div style="font-size:14px;color:#DDDDE4;line-height:1.45">{{ i.texto }}</div>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-for>
+          </div>
+        <button onClick="{{ cerrarNovedades }}" style="width:100%;margin-top:18px;background:transparent;border:1px solid #33333D;color:#C9C9D2;border-radius:12px;padding:12px;font-weight:600;cursor:pointer">Cerrar</button>
+      </div>
+    </div>
+  </sc-if>
+
   <sc-if value="{{ popupAbierto }}">
     <div style="position:fixed;inset:0;background:rgba(4,4,6,.92);z-index:60;display:flex;align-items:center;justify-content:center;padding:20px">
       <div style="width:100%;max-width:420px;background:#101014;border:1px solid #FF2E88;border-radius:20px;padding:26px;text-align:center">
@@ -2836,7 +2934,7 @@ const CLASIFICACION = EQUIPOS.map(([nombre, color, nuestro]) => ({
 }));
 
 const AVISOS = [
-  { id:1, fecha:'hoy', autor:'Danisc', texto:'Arrancamos temporada. Confirmad la convocatoria de la jornada 1 antes del viernes.' }
+  { id:1, fecha:'23 sep 2026', autor:'Danisc', texto:'Arrancamos temporada. Confirmad la convocatoria de la jornada 1 antes del viernes.' }
 ];
 
 const ACTAS = [];
@@ -2882,6 +2980,68 @@ const TIPOS_CARTEL = [
   { k:'proximo',   label:'Próximo partido',titulo:'Este sábado',    sub:'Jornada 14',          msg:'Perro Sanse vs Racing Club Sanse. 12:00, Velódromo.' },
   { k:'cumple',    label:'Cumpleaños',     titulo:'Felicidades',    sub:'Cumple años',         msg:'Que lo celebres marcando el sábado.' }
 ];
+
+// ---- Versión de la app y novedades ----
+// Cada vez que se publique algo nuevo: se sube APP_VERSION y se añade
+// una entrada arriba del todo en NOVEDADES. «para» decide quién la ve:
+// 'todos', 'jugador', 'fan' o 'mister'.
+// Versión X.Y.Z: X cambios muy grandes, Y funcionalidades nuevas,
+// Z arreglos y retoques pequeños.
+const APP_VERSION = '1.2.0';
+const NOVEDADES = [
+  { version:'1.2.0', fecha:'28 sep 2026', items:[
+    { para:'todos',   texto:'Ya puedes editar ✎ o borrar 🗑 tus propios comentarios del feed.' },
+    { para:'todos',   texto:'Dale ♥ a los comentarios que más te gusten.' },
+    { para:'todos',   texto:'«Ver al rival» ahora enseña su escudo.' },
+    { para:'todos',   texto:'Los avisos del tablón muestran la fecha real en que se publicaron.' },
+    { para:'jugador', texto:'Cuando el míster publica un resultado, te sale ya la convocatoria de la siguiente jornada.' },
+    { para:'mister',  texto:'Meter resultados trae ya los 7 partidos de cada jornada del calendario oficial.' },
+    { para:'mister',  texto:'Apuntar cobros en Caja te dice el motivo exacto si algo falla.' },
+    { para:'mister',  texto:'Nueva sección en Ajustes: qué fans siguen a cada jugador.' },
+    { para:'mister',  texto:'Control de versiones con novedades por rol (esto que estás leyendo).' }
+  ] },
+  { version:'1.1.0', fecha:'24 sep 2026', items:[
+    { para:'todos',   texto:'Calendario oficial de las 26 jornadas y escudos de los 14 equipos.' },
+    { para:'todos',   texto:'En el buzón puedes votar 👍 o 👎 las sugerencias de los demás.' },
+    { para:'mister',  texto:'Panel de moderación: registro de fans, bloqueo y borrado de comentarios.' }
+  ] },
+  { version:'1.0.0', fecha:'23 sep 2026', items:[
+    { para:'todos',   texto:'Lanzamiento de la app oficial del Perro Sanse F.C.' }
+  ] }
+];
+const CLAVE_NOVEDADES = 'psfc-novedades-vista';
+
+/** Compara versiones tipo «1.10» > «1.9». */
+function versionMayor(a, b) {
+  const pa = String(a || '0').split('.').map(Number), pb = String(b || '0').split('.').map(Number);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const x = pa[i] || 0, y = pb[i] || 0;
+    if (x !== y) return x > y;
+  }
+  return false;
+}
+
+/** Novedades que le tocan a un rol, agrupadas en secciones.
+ *  - Jugador y fan: solo lo suyo y lo común, sin título de sección.
+ *  - Míster: todo, separado en Míster / Jugadores / Fans / Para todos. */
+function novedadesPara(rol, soloDesde) {
+  return NOVEDADES
+    .filter(n => !soloDesde || versionMayor(n.version, soloDesde))
+    .map(n => {
+      let secciones;
+      if (rol === 'mister') {
+        secciones = [
+          ['mister', '🧢 Míster'], ['jugador', '⚽ Jugadores'], ['fan', '💗 Fans'], ['todos', '🐶 Para todos']
+        ].map(([k, t]) => ({ titulo:t, hayTitulo:true, items: n.items.filter(i => i.para === k).map(i => ({ texto:i.texto })) }))
+         .filter(s => s.items.length);
+      } else {
+        const items = n.items.filter(i => i.para === 'todos' || i.para === rol).map(i => ({ texto:i.texto }));
+        secciones = items.length ? [{ titulo:'', hayTitulo:false, items }] : [];
+      }
+      return { version:'v' + n.version, fecha:n.fecha, secciones };
+    })
+    .filter(n => n.secciones.length);
+}
 
 const TABS = [
   ['panel','Panel'], ['feed','Feed'], ['convocatoria','Convocatoria'], ['alineacion','Alineación'],
@@ -2983,6 +3143,15 @@ function siglaEquipo(nombre, todos) {
 }
 function eqLiga(tabla, nombre) { return (tabla || []).find(e => e.nombre === nombre) || { pj:0, g:0, e:0, p:0, gf:0, gc:0, color:'#6D6D7A', racha:[] }; }
 function pts(e) { return e.g * 3 + e.e; }
+
+/** Fecha de hoy tal como se guarda en avisos, publicaciones y multas:
+ *  «28 sep 2026». Antes se guardaba la palabra «hoy», que al día
+ *  siguiente ya no significaba nada. */
+function hoyTexto() {
+  const m = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  const d = new Date();
+  return d.getDate() + ' ' + m[d.getMonth()] + ' ' + d.getFullYear();
+}
 
 // Calendario oficial de TODA la liga (los 7 partidos de cada jornada),
 // sacado del documento del Ayuntamiento. Sirve para la quiniela.
@@ -3088,7 +3257,7 @@ class Component extends DCLogic {
     orden:'goles', vistaStats:'tabla', jugadorSel:null, compClave:'goles', votoPorJornada:{}, notas:[], misNotas:{}, vistaConv:'fotos', vistaMvp:'votacion',
     calVista:'lista', calMes:'todos', calJornada:'todas', rivalNum:null,
     actaSel:null, actaAbierta:null,
-    editandoCom:null, borradorCom:'',
+    editandoCom:null, borradorCom:'', seguidoresMapa:null, verNovedades:false, novedadesPendientes:false,
     postTipo:'aviso', postTitulo:'', postTexto:'', postFoto:'', avisoFeed:'', borradores:{}, editandoPost:null, borradorPost:null, misReacciones:{},
     listaFansRaw:[], avisoFans:'', confirmarBorrarFan:null,
     tipoCartel:'fichaje', protagonista:7, cartelFormato:'4:5 (feed vertical)', cartelExtra:'', copiado:false
@@ -3184,6 +3353,14 @@ class Component extends DCLogic {
         goles: act.reduce((s, p) => s + (p.goles || 0), 0),
         asis: act.reduce((s, p) => s + (p.asis || 0), 0)
       });
+      // Novedades: solo si hay algo nuevo para su rol desde la última vez.
+      // La primera vez que entra alguien se le enseña solo la última versión.
+      try {
+        const vista = localStorage.getItem(CLAVE_NOVEDADES);
+        const desde = vista || (NOVEDADES[1] ? NOVEDADES[1].version : '0');
+        if (novedadesPara(s.rol, desde).length) this.setState({ novedadesPendientes:true });
+        else localStorage.setItem(CLAVE_NOVEDADES, APP_VERSION);
+      } catch (e) {}
       if (this.respuestaPendiente) { this.aplicarRespuestaPendiente(); return; }
       if (s.rol === 'jugador' && !s.forzarPass && !this.estadosDe(this.jornada())[s.usuarioId]) this.setState({ popup:true });
     });
@@ -3650,7 +3827,7 @@ class Component extends DCLogic {
         if (!acta) { this.setState({ avisoGuardado:'No hay ningún acta que publicar.' }); return; }
         const goles = (acta.eventos || []).filter(e => /gol/i.test(e.detalle)).map(e => e.min + "' " + e.jugador).join(', ');
         const gana = acta.gf > acta.gc, emp = acta.gf === acta.gc;
-        base = { tipo:'resultado', fecha:'hoy',
+        base = { tipo:'resultado', fecha:hoyTexto(),
           titulo: acta.gf + ' - ' + acta.gc + (gana ? ' y tres puntos' : emp ? ' y reparto' : ''),
           texto: 'Jornada ' + acta.jornada + ' contra ' + acta.rival + '. ' + (goles ? 'Goles: ' + goles + '.' : 'Sin goles nuestros.') };
       }
@@ -3665,12 +3842,12 @@ class Component extends DCLogic {
 
       if (que === 'convocatoria') {
         const lista = porDorsal(conv).map(x => x.dorsal + ' ' + x.nombre).join(', ');
-        base = { tipo:'convocatoria', fecha:'hoy', titulo:'Convocatoria J' + p.num,
+        base = { tipo:'convocatoria', fecha:hoyTexto(), titulo:'Convocatoria J' + p.num,
           texto: conv.length + ' convocados para ' + linea + '. ' + p.dia + ' de ' + p.mes.toLowerCase() + ' a las ' + p.hora + ' en ' + donde + '.\n\n' + lista };
       }
       if (que === 'alineacion') {
         const once = slotsDef.map((s, i) => { const j = JUG.find(x => x.id === aliJ.once[i]); return j ? s.rol + ' ' + j.nombre : null; }).filter(Boolean);
-        base = { tipo:'alineacion', fecha:'hoy', titulo:'Alineación J' + p.num,
+        base = { tipo:'alineacion', fecha:hoyTexto(), titulo:'Alineación J' + p.num,
           texto: aliJ.formacion + ' para ' + linea + '.\n\n' + once.join('\n') };
       }
       if (!base) return;
@@ -4063,6 +4240,23 @@ class Component extends DCLogic {
       vistasRol: [['mister','Míster'],['jugador','Jugador'],['fan','Fan']].map(([k, label]) => ({ label, style:this.tabBtn(vista === k), go:() => this.setState({ verComo:k, tab:'panel', vistaMvp:'votacion' }) })),
       roleLabel: admin ? 'Míster' : esFan ? 'Fan' : 'Jugador',
       rolePillStyle: 'font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:12px;letter-spacing:.1em;text-transform:uppercase;padding:8px 14px;border-radius:999px;background:' + (admin ? ac : esFan ? '#2FA8A0' : '#1C1C22') + ';color:' + (admin || esFan ? '#0B0B0D' : '#C9C9D2'),
+      appVersion: 'v' + APP_VERSION,
+      abrirNovedades: () => this.setState({ verNovedades:true }),
+      // El aviso de novedades espera a que el jugador haya contestado la
+      // convocatoria: nunca se pisan dos ventanas a la vez.
+      hayNovedades: !!st.novedadesPendientes && !st.popup && !st.forzarPass,
+      verHistorial: !!st.verNovedades,
+      cerrarNovedades: () => {
+        try { localStorage.setItem(CLAVE_NOVEDADES, APP_VERSION); } catch (e) {}
+        this.setState({ novedadesPendientes:false, verNovedades:false });
+      },
+      novedadesNuevas: (() => {
+        let vista = null;
+        try { vista = localStorage.getItem(CLAVE_NOVEDADES); } catch (e) {}
+        const desde = vista || (NOVEDADES[1] ? NOVEDADES[1].version : '0');
+        return novedadesPara(st.rol, desde);
+      })(),
+      novedadesTodas: novedadesPara(st.rol),
       claveAnim: st.tab + '-' + st.tabAnim,
       estiloPantalla: 'animation:psfcEntra .42s cubic-bezier(.22,.9,.25,1) both',
       tabs: TABS.filter(([k]) => tabsPermitidas.indexOf(k) !== -1
@@ -4410,6 +4604,23 @@ class Component extends DCLogic {
       hayAvisoFans: !!st.avisoFans, avisoFans: st.avisoFans,
       sinFansAun: (st.listaFansRaw || []).length === 0,
       refrescarFans: () => this.cargarFans(),
+      textoSeguidores: st.seguidoresMapa ? 'Actualizar' : 'Ver seguidores',
+      cargarSeguidores: async () => {
+        const r = await this.bk.seguidoresPorJugador();
+        if (!r.ok) { this.setState({ avisoGuardado:'No se pudieron cargar los seguidores: ' + r.error }); return; }
+        this.setState({ seguidoresMapa: r.mapa });
+      },
+      haySeguidores: !!st.seguidoresMapa,
+      seguidores: porDorsal(JUG).map(j => {
+        const lista = ((st.seguidoresMapa || {})[j.id] || []);
+        return {
+          nombre: j.dorsal + ' · ' + j.nombre, total: lista.length,
+          iniciales: j.foto ? '' : iniciales(j.nombre), avatarStyle: this.avatar(j, 30),
+          fans: lista.length ? lista.map(x => ({ nombre: x.nombre + (x.rol === 'jugador' ? ' (jugador)' : x.rol === 'mister' ? ' (míster)' : ''),
+            style: 'background:#101014;border:1px solid ' + (x.rol === 'fan' ? '#FF2E88' : '#2FA8A0') + ';border-radius:999px;padding:3px 10px;font-size:12px;color:#C9C9D2' }))
+            : [{ nombre:'Sin seguidores todavía', style:'font-size:12px;color:#6D6D7A' }]
+        };
+      }).sort((a, b) => b.total - a.total),
       listaFans: (st.listaFansRaw || []).map(f => ({
         nombre: f.nombre || 'Fan', email: f.email || 'sin correo (aún no ha iniciado sesión)',
         colorNombre: f.bloqueado ? '#8A8A96' : '#EDEDF2',
@@ -4563,7 +4774,7 @@ class Component extends DCLogic {
       },
       publicar: async () => {
         if (!st.postTitulo.trim()) return;
-        const base = { tipo:st.postTipo, fecha:'hoy', titulo:st.postTitulo, texto:st.postTexto, foto:st.postFoto, reacciones:{ '🔥':0, '👏':0, '😂':0 } };
+        const base = { tipo:st.postTipo, fecha:hoyTexto(), titulo:st.postTitulo, texto:st.postTexto, foto:st.postFoto, reacciones:{ '🔥':0, '👏':0, '😂':0 } };
         this.setState({ postTitulo:'', postTexto:'', postFoto:'' });
         const creado = await this.bk.publicar(base);
         if (creado && creado.error) {
@@ -4623,6 +4834,18 @@ class Component extends DCLogic {
             const jp = JUG.find(x => x.nombre === c.autor);
             return {
               id:c.id, autor:c.autor, texto:c.texto, iniciales: jp && jp.foto ? '' : iniciales(c.autor), avatarStyle:this.avatar(jp, 30),
+              likes: c.likes || 0,
+              likeStyle: 'background:transparent;border:0;cursor:pointer;font-size:12px;font-weight:700;padding:2px 4px;white-space:nowrap;color:' + (c.miLike ? '#FF2E88' : '#6D6D7A'),
+              like: async () => {
+                const poner = !c.miLike;
+                // Se refleja al instante y se deshace si el servidor lo rechaza.
+                this.patchPost(p.id, { comentarios: p.comentarios.map(x => x.id === c.id ? Object.assign({}, x, { miLike:poner, likes:(x.likes || 0) + (poner ? 1 : -1) }) : x) });
+                const r = await this.bk.likeComentario(c.id, poner);
+                if (!r.ok) {
+                  this.patchPost(p.id, { comentarios: p.comentarios.map(x => x.id === c.id ? Object.assign({}, x, { miLike:c.miLike, likes:c.likes || 0 }) : x) });
+                  this.setState({ avisoGuardado:'No se pudo guardar el like: ' + r.error });
+                }
+              },
               puedeBorrar: admin || !!c.mio,
               puedeEditar: !!c.mio && st.editandoCom !== c.id,
               editando: st.editandoCom === c.id,
@@ -5464,7 +5687,7 @@ class Component extends DCLogic {
         if (!ranked.length || !ultimaActa) return;
         const ganador = ranked[0].p;
         this.patchActa(ultimaActa.id, { mvp_id: ganador.id });
-        const base = { tipo:'mvp', fecha:'hoy',
+        const base = { tipo:'mvp', fecha:hoyTexto(),
           titulo:'MVP: ' + ganador.nombre,
           texto:'Elegido mejor jugador de la jornada ' + jornadaViva + ' contra ' + ultimaActa.rival + ' por votación de sus compañeros (' + ranked[0].votos + ' votos).',
           foto:'', reacciones:{ '🔥':0, '👏':0, '😂':0 } };
@@ -5699,7 +5922,7 @@ class Component extends DCLogic {
         if (!jid) { this.setState({ avisoGuardado:'Elige a quién le pones la multa.' }); return; }
         const lista = st.economia.multas || TIPOS_MULTA_BASE;
         const tipo = lista.find(t => t.k === st.nuevaMultaTipo) || lista[0];
-        const fila = { jugador_id:jid, tipo:tipo.label, importe:st.nuevaMultaImporte, nota:st.nuevaMultaNota, fecha:'hoy', pagada:false };
+        const fila = { jugador_id:jid, tipo:tipo.label, importe:st.nuevaMultaImporte, nota:st.nuevaMultaNota, fecha:hoyTexto(), pagada:false };
         const creada = await this.bk.crear('multas', fila);
         if (!creada) { this.setState({ avisoGuardado:'No se pudo poner la multa. Falta crear la tabla «multas» (ver SUPABASE.md).' }); return; }
         this.setState(s => ({ multas:[creada].concat(s.multas), nuevaMultaNota:'' }));
@@ -5760,7 +5983,7 @@ class Component extends DCLogic {
         const conceptos = st.economia.conceptos || [];
         // Si el concepto elegido ya no existe (se borró o renombró), se usa el primero.
         const concepto = conceptos.some(c => c.id === st.cobroConcepto) ? st.cobroConcepto : ((conceptos[0] || {}).id || 'cuota');
-        const fila = { jugador_id:st.cobroJugador, concepto, importe:imp, fecha:new Date().toLocaleDateString('es-ES'), pagado:true, mes:'' };
+        const fila = { jugador_id:st.cobroJugador, concepto, importe:imp, fecha:hoyTexto(), pagado:true, mes:'' };
         const creado = await this.bk.crear('pagos', fila);
         if (!creado) {
           const motivo = this.bk.errorUltimo ? this.bk.errorUltimo() : '';
@@ -5830,7 +6053,7 @@ class Component extends DCLogic {
       })),
 
       nuevoAviso: async () => {
-        const fila = { fecha:'hoy', autor:'Danisc', texto:'Nuevo aviso' };
+        const fila = { fecha:hoyTexto(), autor:'Danisc', texto:'Nuevo aviso' };
         const creado = await this.bk.crear('avisos', fila);
         this.setState(s => ({ avisos: [Object.assign({ id: creado ? creado.id : Date.now() }, fila)].concat(s.avisos) }));
       },

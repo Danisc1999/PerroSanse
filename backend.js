@@ -152,7 +152,7 @@ export async function recuperarPass(email) {
 export async function cargar() {
   if (!sesion) return null;
 
-  const [jug, cam, par, act, avi, pub, com, fav, vot, cla, cvs, als, nts, mul, pag, sug, svo, aju, eco, equ, tem, his, pl, pr] = await Promise.all([
+  const [jug, cam, par, act, avi, pub, com, lkc, fav, vot, cla, cvs, als, nts, mul, pag, sug, svo, aju, eco, equ, tem, his, pl, pr] = await Promise.all([
     sb.from('jugadores').select('*').order('id'),
     sb.from('campos').select('*').order('id'),
     sb.from('partidos').select('*').order('num'),
@@ -160,6 +160,7 @@ export async function cargar() {
     sb.from('avisos').select('*').order('id', { ascending: false }),
     sb.from('publicaciones').select('*').order('id', { ascending: false }),
     sb.from('comentarios').select('*').order('id'),
+    sb.from('likes_comentarios').select('*'),
     sb.from('favoritos').select('*'),
     sb.from('votos_mvp').select('*'),
     sb.from('clasificacion').select('*').order('orden'),
@@ -193,9 +194,14 @@ export async function cargar() {
     aliPorJornada[a.partido_num] = { formacion: a.formacion || '1-2-3-1', once: a.once || {}, posiciones: a.posiciones || {} };
   });
 
+  const likesCom = {}, misLikesCom = {};
+  ((lkc && lkc.data) || []).forEach(l => {
+    likesCom[l.comentario_id] = (likesCom[l.comentario_id] || 0) + 1;
+    if (l.perfil_id === sesion.perfilId) misLikesCom[l.comentario_id] = true;
+  });
   const comentariosPorPost = {};
   (com.data || []).forEach(c => {
-    (comentariosPorPost[c.publicacion_id] = comentariosPorPost[c.publicacion_id] || []).push({ id: c.id, autor: c.autor, texto: c.texto, mio: !!c.autor_id && c.autor_id === sesion.perfilId, editado: !!c.editado });
+    (comentariosPorPost[c.publicacion_id] = comentariosPorPost[c.publicacion_id] || []).push({ id: c.id, autor: c.autor, texto: c.texto, mio: !!c.autor_id && c.autor_id === sesion.perfilId, editado: !!c.editado, likes: likesCom[c.id] || 0, miLike: !!misLikesCom[c.id] });
   });
 
   // Los likes y reacciones se cuentan aquí, a partir de una fila por
@@ -860,6 +866,34 @@ export async function borrarComentario(id) {
   if (error) return { ok: false, error: error.message };
   if (!data || !data.length) return { ok: false, error: 'Ese comentario no es tuyo.' };
   return { ok: true };
+}
+
+/** Da o quita el ♥ a un comentario. Uno por cuenta: la fila es propia
+ *  (comentario + perfil) y la base de datos no deja duplicarla. */
+export async function likeComentario(id, poner) {
+  if (!sesion) return { ok: false, error: 'Sin sesión.' };
+  const q = poner
+    ? sb.from('likes_comentarios').upsert({ comentario_id: id, perfil_id: sesion.perfilId }, { onConflict: 'comentario_id,perfil_id' })
+    : sb.from('likes_comentarios').delete().eq('comentario_id', id).eq('perfil_id', sesion.perfilId);
+  const { error } = await q;
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
+/** Solo míster: qué fans (y jugadores) tienen a cada jugador en favoritos. */
+export async function seguidoresPorJugador() {
+  if (!sesion || sesion.rol !== 'mister') return { ok: false, error: 'Solo el míster.' };
+  const [fav, per] = await Promise.all([
+    sb.from('favoritos').select('jugador_id, perfil_id'),
+    sb.from('perfiles').select('id, nombre, rol')
+  ]);
+  if (fav.error) return { ok: false, error: fav.error.message };
+  const nombre = {};
+  (per.data || []).forEach(p => { nombre[p.id] = { nombre: p.nombre || 'Sin nombre', rol: p.rol }; });
+  const mapa = {};
+  (fav.data || []).forEach(f => {
+    (mapa[f.jugador_id] = mapa[f.jugador_id] || []).push(nombre[f.perfil_id] || { nombre: 'Cuenta borrada', rol: 'fan' });
+  });
+  return { ok: true, mapa };
 }
 
 /** Edita el texto de un comentario propio. */
