@@ -499,10 +499,22 @@
                     <div style="display:flex;gap:10px;align-items:flex-start">
                       <div style="{{ c.avatarStyle }}">{{ c.iniciales }}</div>
                       <div style="flex:1;background:#16161C;border-radius:12px;padding:8px 12px;display:flex;gap:8px;align-items:flex-start">
-                        <div style="flex:1">
-                          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;text-transform:uppercase;color:#C9C9D2">{{ c.autor }}</div>
-                          <div style="font-size:14px;color:#DDDDE4">{{ c.texto }}</div>
+                        <div style="flex:1;min-width:0">
+                          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;text-transform:uppercase;color:#C9C9D2">{{ c.autor }} <span style="font-family:Barlow,sans-serif;font-weight:400;font-size:11px;text-transform:none;color:#6D6D7A">{{ c.marcaEditado }}</span></div>
+                          <sc-if value="{{ c.noEditando }}">
+                            <div style="font-size:14px;color:#DDDDE4;overflow-wrap:anywhere">{{ c.texto }}</div>
+                          </sc-if>
+                          <sc-if value="{{ c.editando }}">
+                            <input value="{{ c.borradorTexto }}" onChange="{{ c.setBorrador }}" style="{{ inputStyle }};margin-top:4px"></input>
+                            <div style="display:flex;gap:6px;margin-top:6px">
+                              <button onClick="{{ c.guardar }}" style="background:#FF2E88;color:#0B0B0D;border:0;border-radius:8px;padding:5px 12px;font-weight:700;font-size:12px;cursor:pointer">Guardar</button>
+                              <button onClick="{{ c.cancelar }}" style="background:transparent;border:1px solid #33333D;color:#8A8A96;border-radius:8px;padding:5px 12px;font-size:12px;cursor:pointer">Cancelar</button>
+                            </div>
+                          </sc-if>
                         </div>
+                        <sc-if value="{{ c.puedeEditar }}">
+                          <button onClick="{{ c.editar }}" title="Editar comentario" style="background:transparent;border:0;color:#6D6D7A;cursor:pointer;font-size:14px;padding:2px 4px">✎</button>
+                        </sc-if>
                         <sc-if value="{{ c.puedeBorrar }}">
                           <button onClick="{{ c.borrar }}" title="Borrar comentario" style="background:transparent;border:0;color:#6D6D7A;cursor:pointer;font-size:14px;padding:2px 4px">🗑</button>
                         </sc-if>
@@ -2971,6 +2983,34 @@ function siglaEquipo(nombre, todos) {
 }
 function eqLiga(tabla, nombre) { return (tabla || []).find(e => e.nombre === nombre) || { pj:0, g:0, e:0, p:0, gf:0, gc:0, color:'#6D6D7A', racha:[] }; }
 function pts(e) { return e.g * 3 + e.e; }
+
+// Calendario oficial de TODA la liga (los 7 partidos de cada jornada),
+// sacado del documento del Ayuntamiento. Sirve para la quiniela.
+const CAL_LIGA = [{"n":1,"p":[["BIRRAREAL","FC SALVATIERRA DE SANTIAGO"],["SPORTIUM DE GIJON","LOGIA MASONICA"],["SANT FRANCIS F.C (F7 SS)","RACING SANSE"],["SABADETE FC","SANSE 04"],["PEDRO SANSE","SOBRASADA TEAM"],["GDD","TERESILABOS"],["UD SIN DERECHOS","DEPORTIVO YAN"]]},{"n":2,"p":[["FC SALVATIERRA DE SANTIAGO","UD SIN DERECHOS"],["LOGIA MASONICA","BIRRAREAL"],["RACING SANSE","SPORTIUM DE GIJON"],["SANSE 04","SANT FRANCIS F.C (F7 SS)"],["SOBRASADA TEAM","SABADETE FC"],["TERESILABOS","PEDRO SANSE"],["DEPORTIVO YAN","GDD"]]},{"n":3,"p":[["FC SALVATIERRA DE SANTIAGO","LOGIA MASONICA"],["BIRRAREAL","RACING SANSE"],["SPORTIUM DE GIJON","SANSE 04"],["SANT FRANCIS F.C (F7 SS)","SOBRASADA TEAM"],["SABADETE FC","TERESILABOS"],["PEDRO SANSE","DEPORTIVO YAN"],["UD SIN DERECHOS","GDD"]]},{"n":4,"p":[["LOGIA MASONICA","UD SIN DERECHOS"],["RACING SANSE","FC SALVATIERRA DE SANTIAGO"],["SANSE 04","BIRRAREAL"],["SOBRASADA TEAM","SPORTIUM DE GIJON"],["TERESILABOS","SANT FRANCIS F.C (F7 SS)"],["DEPORTIVO YAN","SABADETE FC"],["GDD","PEDRO SANSE"]]},{"n":5,"p":[["LOGIA MASONICA","RACING SANSE"],["FC SALVATIERRA DE SANTIAGO","SANSE 04"],["BIRRAREAL","SOBRASADA TEAM"],["SPORTIUM DE GIJON","TERESILABOS"],["SANT FRANCIS F.C (F7 SS)","DEPORTIVO YAN"],["SABADETE FC","GDD"],["UD SIN DERECHOS","PEDRO SANSE"]]},{"n":6,"p":[["RACING SANSE","UD SIN DERECHOS"],["SANSE 04","LOGIA MASONICA"],["SOBRASADA TEAM","FC SALVATIERRA DE SANTIAGO"],["TERESILABOS","BIRRAREAL"],["DEPORTIVO YAN","SPORTIUM DE GIJON"],["GDD","SANT FRANCIS F.C (F7 SS)"],["PEDRO SANSE","SABADETE FC"]]},{"n":7,"p":[["RACING SANSE","SANSE 04"],["LOGIA MASONICA","SOBRASADA TEAM"],["FC SALVATIERRA DE SANTIAGO","TERESILABOS"],["BIRRAREAL","DEPORTIVO YAN"],["SPORTIUM DE GIJON","GDD"],["SANT FRANCIS F.C (F7 SS)","PEDRO SANSE"],["UD SIN DERECHOS","SABADETE FC"]]},{"n":8,"p":[["SANSE 04","UD SIN DERECHOS"],["DEPORTIVO YAN","FC SALVATIERRA DE SANTIAGO"],["TERESILABOS","LOGIA MASONICA"],["SOBRASADA TEAM","RACING SANSE"],["GDD","BIRRAREAL"],["PEDRO SANSE","SPORTIUM DE GIJON"],["SABADETE FC","SANT FRANCIS F.C (F7 SS)"]]},{"n":9,"p":[["SANSE 04","SOBRASADA TEAM"],["RACING SANSE","TERESILABOS"],["LOGIA MASONICA","DEPORTIVO YAN"],["FC SALVATIERRA DE SANTIAGO","GDD"],["BIRRAREAL","PEDRO SANSE"],["SPORTIUM DE GIJON","SABADETE FC"],["UD SIN DERECHOS","SANT FRANCIS F.C (F7 SS)"]]},{"n":10,"p":[["SANT FRANCIS F.C (F7 SS)","SPORTIUM DE GIJON"],["TERESILABOS","SANSE 04"],["DEPORTIVO YAN","RACING SANSE"],["GDD","LOGIA MASONICA"],["PEDRO SANSE","FC SALVATIERRA DE SANTIAGO"],["SABADETE FC","BIRRAREAL"],["SOBRASADA TEAM","UD SIN DERECHOS"]]},{"n":11,"p":[["SOBRASADA TEAM","TERESILABOS"],["SANSE 04","DEPORTIVO YAN"],["RACING SANSE","GDD"],["LOGIA MASONICA","PEDRO SANSE"],["FC SALVATIERRA DE SANTIAGO","SABADETE FC"],["BIRRAREAL","SANT FRANCIS F.C (F7 SS)"],["UD SIN DERECHOS","SPORTIUM DE GIJON"]]},{"n":12,"p":[["UD SIN DERECHOS","TERESILABOS"],["DEPORTIVO YAN","SOBRASADA TEAM"],["GDD","SANSE 04"],["PEDRO SANSE","RACING SANSE"],["SABADETE FC","LOGIA MASONICA"],["SANT FRANCIS F.C (F7 SS)","FC SALVATIERRA DE SANTIAGO"],["SPORTIUM DE GIJON","BIRRAREAL"]]},{"n":13,"p":[["TERESILABOS","DEPORTIVO YAN"],["SOBRASADA TEAM","GDD"],["SANSE 04","PEDRO SANSE"],["RACING SANSE","SABADETE FC"],["LOGIA MASONICA","SANT FRANCIS F.C (F7 SS)"],["FC SALVATIERRA DE SANTIAGO","SPORTIUM DE GIJON"],["BIRRAREAL","UD SIN DERECHOS"]]},{"n":14,"p":[["FC SALVATIERRA DE SANTIAGO","BIRRAREAL"],["LOGIA MASONICA","SPORTIUM DE GIJON"],["RACING SANSE","SANT FRANCIS F.C (F7 SS)"],["SANSE 04","SABADETE FC"],["SOBRASADA TEAM","PEDRO SANSE"],["TERESILABOS","GDD"],["DEPORTIVO YAN","UD SIN DERECHOS"]]},{"n":15,"p":[["UD SIN DERECHOS","FC SALVATIERRA DE SANTIAGO"],["BIRRAREAL","LOGIA MASONICA"],["SPORTIUM DE GIJON","RACING SANSE"],["SANT FRANCIS F.C (F7 SS)","SANSE 04"],["SABADETE FC","SOBRASADA TEAM"],["PEDRO SANSE","TERESILABOS"],["GDD","DEPORTIVO YAN"]]},{"n":16,"p":[["LOGIA MASONICA","FC SALVATIERRA DE SANTIAGO"],["RACING SANSE","BIRRAREAL"],["SANSE 04","SPORTIUM DE GIJON"],["SOBRASADA TEAM","SANT FRANCIS F.C (F7 SS)"],["TERESILABOS","SABADETE FC"],["DEPORTIVO YAN","PEDRO SANSE"],["GDD","UD SIN DERECHOS"]]},{"n":17,"p":[["UD SIN DERECHOS","LOGIA MASONICA"],["FC SALVATIERRA DE SANTIAGO","RACING SANSE"],["BIRRAREAL","SANSE 04"],["SPORTIUM DE GIJON","SOBRASADA TEAM"],["SANT FRANCIS F.C (F7 SS)","TERESILABOS"],["SABADETE FC","DEPORTIVO YAN"],["PEDRO SANSE","GDD"]]},{"n":18,"p":[["RACING SANSE","LOGIA MASONICA"],["SANSE 04","FC SALVATIERRA DE SANTIAGO"],["SOBRASADA TEAM","BIRRAREAL"],["TERESILABOS","SPORTIUM DE GIJON"],["DEPORTIVO YAN","SANT FRANCIS F.C (F7 SS)"],["GDD","SABADETE FC"],["PEDRO SANSE","UD SIN DERECHOS"]]},{"n":19,"p":[["UD SIN DERECHOS","RACING SANSE"],["LOGIA MASONICA","SANSE 04"],["FC SALVATIERRA DE SANTIAGO","SOBRASADA TEAM"],["BIRRAREAL","TERESILABOS"],["SPORTIUM DE GIJON","DEPORTIVO YAN"],["SANT FRANCIS F.C (F7 SS)","GDD"],["SABADETE FC","PEDRO SANSE"]]},{"n":20,"p":[["SANSE 04","RACING SANSE"],["SOBRASADA TEAM","LOGIA MASONICA"],["TERESILABOS","FC SALVATIERRA DE SANTIAGO"],["DEPORTIVO YAN","BIRRAREAL"],["GDD","SPORTIUM DE GIJON"],["PEDRO SANSE","SANT FRANCIS F.C (F7 SS)"],["SABADETE FC","UD SIN DERECHOS"]]},{"n":21,"p":[["UD SIN DERECHOS","SANSE 04"],["RACING SANSE","SOBRASADA TEAM"],["LOGIA MASONICA","TERESILABOS"],["FC SALVATIERRA DE SANTIAGO","DEPORTIVO YAN"],["BIRRAREAL","GDD"],["SPORTIUM DE GIJON","PEDRO SANSE"],["SANT FRANCIS F.C (F7 SS)","SABADETE FC"]]},{"n":22,"p":[["SOBRASADA TEAM","SANSE 04"],["TERESILABOS","RACING SANSE"],["DEPORTIVO YAN","LOGIA MASONICA"],["GDD","FC SALVATIERRA DE SANTIAGO"],["PEDRO SANSE","BIRRAREAL"],["SABADETE FC","SPORTIUM DE GIJON"],["SANT FRANCIS F.C (F7 SS)","UD SIN DERECHOS"]]},{"n":23,"p":[["UD SIN DERECHOS","SOBRASADA TEAM"],["SANSE 04","TERESILABOS"],["RACING SANSE","DEPORTIVO YAN"],["LOGIA MASONICA","GDD"],["FC SALVATIERRA DE SANTIAGO","PEDRO SANSE"],["BIRRAREAL","SABADETE FC"],["SPORTIUM DE GIJON","SANT FRANCIS F.C (F7 SS)"]]},{"n":24,"p":[["TERESILABOS","SOBRASADA TEAM"],["DEPORTIVO YAN","SANSE 04"],["GDD","RACING SANSE"],["PEDRO SANSE","LOGIA MASONICA"],["SABADETE FC","FC SALVATIERRA DE SANTIAGO"],["SANT FRANCIS F.C (F7 SS)","BIRRAREAL"],["SPORTIUM DE GIJON","UD SIN DERECHOS"]]},{"n":25,"p":[["TERESILABOS","UD SIN DERECHOS"],["SOBRASADA TEAM","DEPORTIVO YAN"],["SANSE 04","GDD"],["RACING SANSE","PEDRO SANSE"],["LOGIA MASONICA","SABADETE FC"],["FC SALVATIERRA DE SANTIAGO","SANT FRANCIS F.C (F7 SS)"],["BIRRAREAL","SPORTIUM DE GIJON"]]},{"n":26,"p":[["DEPORTIVO YAN","TERESILABOS"],["SANT FRANCIS F.C (F7 SS)","LOGIA MASONICA"],["PEDRO SANSE","SANSE 04"],["SABADETE FC","RACING SANSE"],["GDD","SOBRASADA TEAM"],["SPORTIUM DE GIJON","FC SALVATIERRA DE SANTIAGO"],["UD SIN DERECHOS","BIRRAREAL"]]}];
+
+/** Encuentra en la clasificación el equipo que corresponde a un nombre
+ *  del calendario oficial (mayúsculas, sin tildes, etc.). */
+function equipoLiga(raw, tabla) {
+  const norm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
+  if (/pedro\s*sanse/i.test(raw)) {
+    const n = (tabla || []).find(e => e.nuestro);
+    if (n) return n.nombre;
+  }
+  const k = norm(raw);
+  const t = (tabla || []).find(e => norm(e.nombre) === k)
+    || (tabla || []).find(e => norm(e.nombre).indexOf(k) !== -1 || k.indexOf(norm(e.nombre)) !== -1);
+  return t ? t.nombre : raw;
+}
+
+/** Partidos de una jornada con los nombres de la clasificación. Si la
+ *  jornada no está en el calendario oficial, se emparejan por orden. */
+function paresJornada(num, tabla) {
+  const j = CAL_LIGA.find(x => x.n === num);
+  if (j && j.p.length) return j.p.map(([a, b]) => [equipoLiga(a, tabla), equipoLiga(b, tabla)]);
+  const eq = (tabla || []).map(e => e.nombre), pares = [];
+  for (let i = 0; i < eq.length; i += 2) if (eq[i + 1]) pares.push([eq[i], eq[i + 1]]);
+  return pares;
+}
 /** Ordena por dorsal; los que aún no tienen, al final. */
 function porDorsal(lista) {
   return [...lista].sort((a, b) => {
@@ -3048,6 +3088,7 @@ class Component extends DCLogic {
     orden:'goles', vistaStats:'tabla', jugadorSel:null, compClave:'goles', votoPorJornada:{}, notas:[], misNotas:{}, vistaConv:'fotos', vistaMvp:'votacion',
     calVista:'lista', calMes:'todos', calJornada:'todas', rivalNum:null,
     actaSel:null, actaAbierta:null,
+    editandoCom:null, borradorCom:'',
     postTipo:'aviso', postTitulo:'', postTexto:'', postFoto:'', avisoFeed:'', borradores:{}, editandoPost:null, borradorPost:null, misReacciones:{},
     listaFansRaw:[], avisoFans:'', confirmarBorrarFan:null,
     tipoCartel:'fichaje', protagonista:7, cartelFormato:'4:5 (feed vertical)', cartelExtra:'', copiado:false
@@ -3362,6 +3403,15 @@ class Component extends DCLogic {
     this._tConfeti = setTimeout(() => this.setState({ confeti: [] }), 5200);
   }
 
+  /** Partidos de la jornada que no son el nuestro, listos para la quiniela. */
+  otrosDeJornada(num, tabla) {
+    const nuestro = (tabla || []).find(e => e.nuestro);
+    const n = nuestro ? nuestro.nombre : 'Perro Sanse F.C.';
+    return paresJornada(num, tabla)
+      .filter(([a, b]) => a !== n && b !== n)
+      .map(([a, b]) => ({ local:a, visitante:b, gl:'', gv:'' }));
+  }
+
   jornadaVoto() {
     const ordenadas = [...(this.state.actas || [])].sort((a, b) => a.jornada - b.jornada);
     const ultima = ordenadas[ordenadas.length - 1];
@@ -3634,7 +3684,17 @@ class Component extends DCLogic {
         mensajeGrupo: '⚽ ' + base.titulo + '\n' + base.texto,
         avisoGuardado:''
       }));
-      if (que === 'acta') this.recalcular();
+      if (que === 'acta') {
+        this.recalcular();
+        // Publicar el resultado cierra la jornada en el calendario: la
+        // siguiente pasa a ser la «próxima» y a los jugadores les salta ya
+        // la convocatoria nueva para apuntarse.
+        this.setState(s => ({
+          partidos: s.partidos.map(x => x.num === acta.jornada ? Object.assign({}, x, { gf: acta.gf, gc: acta.gc }) : x),
+          jornadaSel: null,
+          respondido: {}
+        }));
+      }
       if (que === 'acta' && acta && acta.gf > acta.gc) this.lanzarConfeti(120);
       if (que === 'alineacion') this.anunciarOnce();
       if (this.bk.enviarAviso) {
@@ -4563,7 +4623,21 @@ class Component extends DCLogic {
             const jp = JUG.find(x => x.nombre === c.autor);
             return {
               id:c.id, autor:c.autor, texto:c.texto, iniciales: jp && jp.foto ? '' : iniciales(c.autor), avatarStyle:this.avatar(jp, 30),
-              puedeBorrar: admin,
+              puedeBorrar: admin || !!c.mio,
+              puedeEditar: !!c.mio && st.editandoCom !== c.id,
+              editando: st.editandoCom === c.id,
+              noEditando: st.editandoCom !== c.id,
+              marcaEditado: c.editado ? '· editado' : '',
+              borradorTexto: st.editandoCom === c.id ? st.borradorCom : c.texto,
+              editar: () => this.setState({ editandoCom:c.id, borradorCom:c.texto }),
+              cancelar: () => this.setState({ editandoCom:null, borradorCom:'' }),
+              setBorrador: e => this.setState({ borradorCom:e.target.value }),
+              guardar: async () => {
+                const r = await this.bk.editarComentario(c.id, st.borradorCom);
+                if (!r.ok) { this.setState({ avisoGuardado:'No se pudo editar: ' + r.error }); return; }
+                this.patchPost(p.id, { comentarios: p.comentarios.map(x => x.id === c.id ? Object.assign({}, x, { texto:r.texto, editado:true }) : x) });
+                this.setState({ editandoCom:null, borradorCom:'' });
+              },
               borrar: async () => {
                 const r = await this.bk.borrarComentario(c.id);
                 if (r.ok) this.patchPost(p.id, { comentarios: p.comentarios.filter(x => x.id !== c.id) });
@@ -4608,7 +4682,7 @@ class Component extends DCLogic {
             this.setState(s => ({ borradores: Object.assign({}, s.borradores, { [p.id]:'' }) }));
             const r = await this.bk.comentar(p.id, txt);
             if (!r.ok) { this.setState({ avisoGuardado:'No se pudo comentar: ' + r.error }); return; }
-            this.patchPost(p.id, { comentarios: p.comentarios.concat([{ id: r.id, autor: r.autor, texto:txt }]) });
+            this.patchPost(p.id, { comentarios: p.comentarios.concat([{ id: r.id, autor: r.autor, texto:txt, mio:true }]) });
           }
         };
       }),
@@ -4866,10 +4940,10 @@ class Component extends DCLogic {
         if (!partidoRival || !dRival) return { nombre:'', datos:[], racha:[], barras:[] };
         const c = this.campoDe(partidoRival);
         return {
-          nombre:partidoRival.rival, inicial:iniciales(partidoRival.rival), jornada:partidoRival.num,
+          nombre:partidoRival.rival, inicial:this.siglaSiNoHayEscudo(partidoRival.rival, iniciales(partidoRival.rival)), jornada:partidoRival.num,
           fecha: partidoRival.dia + ' de ' + partidoRival.mes.toLowerCase(),
           localia: partidoRival.casa ? 'jugamos en casa' : 'jugamos fuera',
-          badge: this.badge('', dRival.r.color, 52),
+          badge: this.badgeEquipo(partidoRival.rival, dRival.r.color, 64),
           difLabel: DIF_LABEL[dRival.score], difPill: this.pill(DIF_COLOR[dRival.score], '#0B0B0D'),
           barras: [1, 2, 3, 4, 5].map(i => ({ style:'flex:1;height:8px;border-radius:4px;background:' + (i <= dRival.score ? DIF_COLOR[dRival.score] : '#22222A') })),
           lectura: dRival.lectura,
@@ -5184,10 +5258,12 @@ class Component extends DCLogic {
       opcionesFoto: st.partidos.map(p => ({ v:p.num, label:'Jornada ' + p.num })),
       // ---- Quiniela: resultados de toda la jornada de un tirón ----
       quinielaAbierta: !!st.quiniela,
-      abrirQuiniela: () => this.setState({ quiniela: { jornada: (prox ? prox.num : 1), marcadores:{} } }),
+      // Al abrir o cambiar de jornada, el resto de partidos se rellenan solos
+      // con el calendario oficial: solo hay que escribir los marcadores.
+      abrirQuiniela: () => { const j = prox ? prox.num : 1; this.setState({ quiniela: { jornada:j, marcadores:{}, otros: this.otrosDeJornada(j, TABLA_LIGA) } }); },
       cerrarQuiniela: () => this.setState({ quiniela:null }),
       quinielaJornada: st.quiniela ? st.quiniela.jornada : 1,
-      setQuinielaJornada: e => { const v = parseInt(e.target.value, 10); this.setState(s => ({ quiniela: Object.assign({}, s.quiniela, { jornada:v }) })); },
+      setQuinielaJornada: e => { const v = parseInt(e.target.value, 10); this.setState(s => ({ quiniela: Object.assign({}, s.quiniela, { jornada:v, marcadores:{}, otros: this.otrosDeJornada(v, TABLA_LIGA) }) })); },
       // Nuestro partido de esa jornada es dato real (viene del calendario).
       // Los demás enfrentamientos los elige el míster: la app no se los inventa.
       quinielaNuestro: (() => {
@@ -5681,10 +5757,17 @@ class Component extends DCLogic {
       guardarCobro: async () => {
         const imp = this.num(st.cobroImporte);
         if (!imp) { this.setState({ avisoGuardado:'Pon cuánto ha pagado.' }); return; }
-        const fila = { jugador_id:st.cobroJugador, concepto:st.cobroConcepto, importe:imp, fecha:'hoy', pagado:true };
+        const conceptos = st.economia.conceptos || [];
+        // Si el concepto elegido ya no existe (se borró o renombró), se usa el primero.
+        const concepto = conceptos.some(c => c.id === st.cobroConcepto) ? st.cobroConcepto : ((conceptos[0] || {}).id || 'cuota');
+        const fila = { jugador_id:st.cobroJugador, concepto, importe:imp, fecha:new Date().toLocaleDateString('es-ES'), pagado:true, mes:'' };
         const creado = await this.bk.crear('pagos', fila);
-        if (!creado) { this.setState({ avisoGuardado:'No se pudo apuntar el cobro. Revisa la tabla «pagos» (ver SUPABASE.md).' }); return; }
-        this.setState(s => ({ pagos: s.pagos.concat([creado]), cobroJugador:null, cobroImporte:'' }));
+        if (!creado) {
+          const motivo = this.bk.errorUltimo ? this.bk.errorUltimo() : '';
+          this.setState({ avisoGuardado:'No se pudo apuntar el cobro: ' + (motivo || 'error desconocido') });
+          return;
+        }
+        this.setState(s => ({ pagos: (s.pagos || []).concat([creado]), cobroJugador:null, cobroImporte:'', avisoGuardado:'Cobro de ' + imp + ' € apuntado.' }));
       },
 
       verRotacion: this.visible('rotacion'),

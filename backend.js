@@ -195,7 +195,7 @@ export async function cargar() {
 
   const comentariosPorPost = {};
   (com.data || []).forEach(c => {
-    (comentariosPorPost[c.publicacion_id] = comentariosPorPost[c.publicacion_id] || []).push({ id: c.id, autor: c.autor, texto: c.texto });
+    (comentariosPorPost[c.publicacion_id] = comentariosPorPost[c.publicacion_id] || []).push({ id: c.id, autor: c.autor, texto: c.texto, mio: !!c.autor_id && c.autor_id === sesion.perfilId, editado: !!c.editado });
   });
 
   // Los likes y reacciones se cuentan aquí, a partir de una fila por
@@ -626,9 +626,14 @@ export async function borrarJornadas(jornadas) {
 
 export async function crear(tabla, fila) {
   const { data, error } = await sb.from(tabla).insert(fila).select().single();
-  if (error) return null;
+  if (error) { ultimoError = error.message; return null; }
+  ultimoError = '';
   return data;
 }
+
+let ultimoError = '';
+/** Motivo del último fallo de «crear», para enseñarlo en pantalla. */
+export function errorUltimo() { return ultimoError; }
 
 /* ---------- AVISOS PUSH ---------- */
 
@@ -831,7 +836,7 @@ export async function comentar(publicacionId, texto) {
   if (!sesion) return { ok: false, error: 'Sin sesión.' };
   const autor = sesion.rol === 'mister' ? 'Míster' : (sesion.nombre || (sesion.rol === 'fan' ? 'Fan' : 'Jugador'));
   const { data, error } = await sb.from('comentarios')
-    .insert({ publicacion_id: publicacionId, autor, texto }).select().single();
+    .insert({ publicacion_id: publicacionId, autor, texto, autor_id: sesion.perfilId }).select().single();
   return error ? { ok: false, error: error.message } : { ok: true, id: data.id, autor };
 }
 
@@ -845,10 +850,29 @@ export async function crearSugerencia(texto) {
 }
 
 /** Moderación: solo el míster puede borrar el comentario de otro. */
+/** Borra un comentario. El míster puede borrar cualquiera; los demás,
+ *  solo los suyos (lo comprueba también la base de datos). */
 export async function borrarComentario(id) {
-  if (!sesion || sesion.rol !== 'mister') return { ok: false, error: 'Solo el míster.' };
-  const { error } = await sb.from('comentarios').delete().eq('id', id);
-  return error ? { ok: false, error: error.message } : { ok: true };
+  if (!sesion) return { ok: false, error: 'Sin sesión.' };
+  let q = sb.from('comentarios').delete().eq('id', id);
+  if (sesion.rol !== 'mister') q = q.eq('autor_id', sesion.perfilId);
+  const { data, error } = await q.select();
+  if (error) return { ok: false, error: error.message };
+  if (!data || !data.length) return { ok: false, error: 'Ese comentario no es tuyo.' };
+  return { ok: true };
+}
+
+/** Edita el texto de un comentario propio. */
+export async function editarComentario(id, texto) {
+  if (!sesion) return { ok: false, error: 'Sin sesión.' };
+  const limpio = String(texto || '').trim().slice(0, 500);
+  if (!limpio) return { ok: false, error: 'El comentario no puede quedar vacío.' };
+  const { data, error } = await sb.from('comentarios')
+    .update({ texto: limpio, editado: true })
+    .eq('id', id).eq('autor_id', sesion.perfilId).select();
+  if (error) return { ok: false, error: error.message };
+  if (!data || !data.length) return { ok: false, error: 'Solo puedes editar tus comentarios.' };
+  return { ok: true, texto: limpio };
 }
 
 /** Like de una publicación: activar añade tu fila, desactivar la borra.
