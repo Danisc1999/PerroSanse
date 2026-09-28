@@ -4110,7 +4110,7 @@ class Component extends DCLogic {
     const s = size || 34;
     return 'width:' + s + 'px;height:' + s + 'px;border-radius:10px;flex:none;display:flex;align-items:center;justify-content:center;font-family:Anton,sans-serif;font-size:' + Math.round(s / 2.6) + 'px;color:#0B0B0D;background:' + color;
   }
-  num(v) { const n = parseFloat(v); return isNaN(n) ? 0 : n; }
+  num(v) { const n = parseFloat(String(v == null ? '' : v).replace(',', '.')); return isNaN(n) ? 0 : n; }
   campoDe(p) {
     const sinCampo = { nombre:'Sin campo', maps:'', color:'#6D6D7A' };
     if (!p) return sinCampo;
@@ -5564,7 +5564,12 @@ class Component extends DCLogic {
               return 'width:56px;box-sizing:border-box;background:' + c + '22;border:1px solid ' + c + ';border-radius:8px;padding:6px 4px;color:' + c + ';font-family:Anton,sans-serif;font-size:15px;text-align:center';
             })(),
             setMin: e => this.patchActa(acta.id, { minutos: acta.minutos.map((x, j) => j === i ? Object.assign({}, x, { min:this.num(e.target.value) }) : x) }),
-            setNota: e => this.patchActa(acta.id, { minutos: acta.minutos.map((x, j) => j === i ? Object.assign({}, x, { nota:this.num(e.target.value) }) : x) }) };
+            setNota: e => {
+              const txt = String(e.target.value).replace(',', '.').replace(/[^0-9.]/g, '');
+              const escribiendo = /\.$/.test(txt);
+              const v = txt === '' ? 0 : escribiendo ? txt : Math.min(10, Math.round(this.num(txt) * 10) / 10);
+              this.patchActa(acta.id, { minutos: acta.minutos.map((x, j) => j === i ? Object.assign({}, x, { nota:v }) : x) });
+            } };
         })
       },
       nombresJugadores: JUG.map(p => ({ v:p.nombre })),
