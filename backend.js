@@ -46,6 +46,7 @@ async function perfilDe(user, rolEsperado) {
   }
 
   sesion = { rol: perfil.rol, jugadorId: perfil.jugador_id, perfilId: user.id, nombre: perfil.nombre };
+  registrarAcceso();
   return {
     ok: true, rol: perfil.rol, nombre: perfil.nombre,
     // El míster que además juega tiene su ficha vinculada en el perfil:
@@ -877,6 +878,21 @@ export async function likeComentario(id, poner) {
     : sb.from('likes_comentarios').delete().eq('comentario_id', id).eq('perfil_id', sesion.perfilId);
   const { error } = await q;
   return error ? { ok: false, error: error.message } : { ok: true };
+}
+
+/** Solo míster: último acceso y número de accesos de cada cuenta. */
+export async function actividadUsuarios() {
+  if (!sesion || sesion.rol !== 'mister') return { ok: false, error: 'Solo el míster.' };
+  const { data, error } = await sb.from('perfiles').select('id, nombre, rol, ultimo_acceso, accesos');
+  return error ? { ok: false, error: error.message } : { ok: true, lista: data || [] };
+}
+
+/** Apunta un acceso de la cuenta actual. Una vez por apertura de la app. */
+let accesoRegistrado = false;
+async function registrarAcceso() {
+  if (accesoRegistrado || !sesion) return;
+  accesoRegistrado = true;
+  try { await sb.rpc('registrar_acceso'); } catch (e) {}
 }
 
 /** Solo míster: qué fans (y jugadores) tienen a cada jugador en favoritos. */
