@@ -1432,7 +1432,7 @@
             <sc-if value="{{ verRecuento }}">
             <div style="background:#101014;border:1px solid #26262E;border-radius:18px;padding:20px;margin-top:16px">
               <div style="font-family:'Anton',sans-serif;font-size:18px;text-transform:uppercase">Recuento</div>
-              <div style="font-size:12px;color:#6D6D7A;margin-top:4px">Nota de compañeros (sobre 5) ×4 · voto directo 5 · gol 3 · asistencia 2 · portería a cero 3 · amarilla −1 · roja −3</div>
+              <div style="font-size:12px;color:#6D6D7A;margin-top:4px">Nota de compañeros (sobre 5) ×4 · voto directo 5 · gol 3 · asistencia 2 · portería a cero 3 · amarilla −1 · roja −3 · gol en propia −2</div>
               <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px">
                 <sc-for list="{{ recuento }}" as="r" hint-placeholder-count="5">
                   <div>
@@ -3297,6 +3297,18 @@ function encajadosPorPortero(acta, jugadores) {
   return out;
 }
 
+/** ¿Este suceso es un gol que se apunta al jugador? Los goles en propia
+ *  (nuestros o del rival) nunca cuentan como gol de nadie. */
+function esGolDeJugador(detalle) {
+  const t = String(detalle || '').toLowerCase();
+  return t.indexOf('gol') !== -1 && t.indexOf('propia') === -1;
+}
+/** Nombre exacto del asistente de un suceso («Gol · asist. Danisc» → «Danisc»). */
+function asistenteDe(detalle) {
+  const m = String(detalle || '').match(/asist\.?\s*([^,·]+)/i);
+  return m ? m[1].trim() : '';
+}
+
 const TIPOS_EVENTO = ['Gol', 'Gol de penalti', 'Gol de falta', 'Gol en propia', 'Gol en propia nuestro', 'Amarilla', 'Roja', 'Otro'];
 
 const CAL_LIGA = [{"n":1,"p":[["BIRRAREAL","FC SALVATIERRA DE SANTIAGO"],["SPORTIUM DE GIJON","LOGIA MASONICA"],["SANT FRANCIS F.C (F7 SS)","RACING SANSE"],["SABADETE FC","SANSE 04"],["PEDRO SANSE","SOBRASADA TEAM"],["GDD","TERESILABOS"],["UD SIN DERECHOS","DEPORTIVO YAN"]]},{"n":2,"p":[["FC SALVATIERRA DE SANTIAGO","UD SIN DERECHOS"],["LOGIA MASONICA","BIRRAREAL"],["RACING SANSE","SPORTIUM DE GIJON"],["SANSE 04","SANT FRANCIS F.C (F7 SS)"],["SOBRASADA TEAM","SABADETE FC"],["TERESILABOS","PEDRO SANSE"],["DEPORTIVO YAN","GDD"]]},{"n":3,"p":[["FC SALVATIERRA DE SANTIAGO","LOGIA MASONICA"],["BIRRAREAL","RACING SANSE"],["SPORTIUM DE GIJON","SANSE 04"],["SANT FRANCIS F.C (F7 SS)","SOBRASADA TEAM"],["SABADETE FC","TERESILABOS"],["PEDRO SANSE","DEPORTIVO YAN"],["UD SIN DERECHOS","GDD"]]},{"n":4,"p":[["LOGIA MASONICA","UD SIN DERECHOS"],["RACING SANSE","FC SALVATIERRA DE SANTIAGO"],["SANSE 04","BIRRAREAL"],["SOBRASADA TEAM","SPORTIUM DE GIJON"],["TERESILABOS","SANT FRANCIS F.C (F7 SS)"],["DEPORTIVO YAN","SABADETE FC"],["GDD","PEDRO SANSE"]]},{"n":5,"p":[["LOGIA MASONICA","RACING SANSE"],["FC SALVATIERRA DE SANTIAGO","SANSE 04"],["BIRRAREAL","SOBRASADA TEAM"],["SPORTIUM DE GIJON","TERESILABOS"],["SANT FRANCIS F.C (F7 SS)","DEPORTIVO YAN"],["SABADETE FC","GDD"],["UD SIN DERECHOS","PEDRO SANSE"]]},{"n":6,"p":[["RACING SANSE","UD SIN DERECHOS"],["SANSE 04","LOGIA MASONICA"],["SOBRASADA TEAM","FC SALVATIERRA DE SANTIAGO"],["TERESILABOS","BIRRAREAL"],["DEPORTIVO YAN","SPORTIUM DE GIJON"],["GDD","SANT FRANCIS F.C (F7 SS)"],["PEDRO SANSE","SABADETE FC"]]},{"n":7,"p":[["RACING SANSE","SANSE 04"],["LOGIA MASONICA","SOBRASADA TEAM"],["FC SALVATIERRA DE SANTIAGO","TERESILABOS"],["BIRRAREAL","DEPORTIVO YAN"],["SPORTIUM DE GIJON","GDD"],["SANT FRANCIS F.C (F7 SS)","PEDRO SANSE"],["UD SIN DERECHOS","SABADETE FC"]]},{"n":8,"p":[["SANSE 04","UD SIN DERECHOS"],["DEPORTIVO YAN","FC SALVATIERRA DE SANTIAGO"],["TERESILABOS","LOGIA MASONICA"],["SOBRASADA TEAM","RACING SANSE"],["GDD","BIRRAREAL"],["PEDRO SANSE","SPORTIUM DE GIJON"],["SABADETE FC","SANT FRANCIS F.C (F7 SS)"]]},{"n":9,"p":[["SANSE 04","SOBRASADA TEAM"],["RACING SANSE","TERESILABOS"],["LOGIA MASONICA","DEPORTIVO YAN"],["FC SALVATIERRA DE SANTIAGO","GDD"],["BIRRAREAL","PEDRO SANSE"],["SPORTIUM DE GIJON","SABADETE FC"],["UD SIN DERECHOS","SANT FRANCIS F.C (F7 SS)"]]},{"n":10,"p":[["SANT FRANCIS F.C (F7 SS)","SPORTIUM DE GIJON"],["TERESILABOS","SANSE 04"],["DEPORTIVO YAN","RACING SANSE"],["GDD","LOGIA MASONICA"],["PEDRO SANSE","FC SALVATIERRA DE SANTIAGO"],["SABADETE FC","BIRRAREAL"],["SOBRASADA TEAM","UD SIN DERECHOS"]]},{"n":11,"p":[["SOBRASADA TEAM","TERESILABOS"],["SANSE 04","DEPORTIVO YAN"],["RACING SANSE","GDD"],["LOGIA MASONICA","PEDRO SANSE"],["FC SALVATIERRA DE SANTIAGO","SABADETE FC"],["BIRRAREAL","SANT FRANCIS F.C (F7 SS)"],["UD SIN DERECHOS","SPORTIUM DE GIJON"]]},{"n":12,"p":[["UD SIN DERECHOS","TERESILABOS"],["DEPORTIVO YAN","SOBRASADA TEAM"],["GDD","SANSE 04"],["PEDRO SANSE","RACING SANSE"],["SABADETE FC","LOGIA MASONICA"],["SANT FRANCIS F.C (F7 SS)","FC SALVATIERRA DE SANTIAGO"],["SPORTIUM DE GIJON","BIRRAREAL"]]},{"n":13,"p":[["TERESILABOS","DEPORTIVO YAN"],["SOBRASADA TEAM","GDD"],["SANSE 04","PEDRO SANSE"],["RACING SANSE","SABADETE FC"],["LOGIA MASONICA","SANT FRANCIS F.C (F7 SS)"],["FC SALVATIERRA DE SANTIAGO","SPORTIUM DE GIJON"],["BIRRAREAL","UD SIN DERECHOS"]]},{"n":14,"p":[["FC SALVATIERRA DE SANTIAGO","BIRRAREAL"],["LOGIA MASONICA","SPORTIUM DE GIJON"],["RACING SANSE","SANT FRANCIS F.C (F7 SS)"],["SANSE 04","SABADETE FC"],["SOBRASADA TEAM","PEDRO SANSE"],["TERESILABOS","GDD"],["DEPORTIVO YAN","UD SIN DERECHOS"]]},{"n":15,"p":[["UD SIN DERECHOS","FC SALVATIERRA DE SANTIAGO"],["BIRRAREAL","LOGIA MASONICA"],["SPORTIUM DE GIJON","RACING SANSE"],["SANT FRANCIS F.C (F7 SS)","SANSE 04"],["SABADETE FC","SOBRASADA TEAM"],["PEDRO SANSE","TERESILABOS"],["GDD","DEPORTIVO YAN"]]},{"n":16,"p":[["LOGIA MASONICA","FC SALVATIERRA DE SANTIAGO"],["RACING SANSE","BIRRAREAL"],["SANSE 04","SPORTIUM DE GIJON"],["SOBRASADA TEAM","SANT FRANCIS F.C (F7 SS)"],["TERESILABOS","SABADETE FC"],["DEPORTIVO YAN","PEDRO SANSE"],["GDD","UD SIN DERECHOS"]]},{"n":17,"p":[["UD SIN DERECHOS","LOGIA MASONICA"],["FC SALVATIERRA DE SANTIAGO","RACING SANSE"],["BIRRAREAL","SANSE 04"],["SPORTIUM DE GIJON","SOBRASADA TEAM"],["SANT FRANCIS F.C (F7 SS)","TERESILABOS"],["SABADETE FC","DEPORTIVO YAN"],["PEDRO SANSE","GDD"]]},{"n":18,"p":[["RACING SANSE","LOGIA MASONICA"],["SANSE 04","FC SALVATIERRA DE SANTIAGO"],["SOBRASADA TEAM","BIRRAREAL"],["TERESILABOS","SPORTIUM DE GIJON"],["DEPORTIVO YAN","SANT FRANCIS F.C (F7 SS)"],["GDD","SABADETE FC"],["PEDRO SANSE","UD SIN DERECHOS"]]},{"n":19,"p":[["UD SIN DERECHOS","RACING SANSE"],["LOGIA MASONICA","SANSE 04"],["FC SALVATIERRA DE SANTIAGO","SOBRASADA TEAM"],["BIRRAREAL","TERESILABOS"],["SPORTIUM DE GIJON","DEPORTIVO YAN"],["SANT FRANCIS F.C (F7 SS)","GDD"],["SABADETE FC","PEDRO SANSE"]]},{"n":20,"p":[["SANSE 04","RACING SANSE"],["SOBRASADA TEAM","LOGIA MASONICA"],["TERESILABOS","FC SALVATIERRA DE SANTIAGO"],["DEPORTIVO YAN","BIRRAREAL"],["GDD","SPORTIUM DE GIJON"],["PEDRO SANSE","SANT FRANCIS F.C (F7 SS)"],["SABADETE FC","UD SIN DERECHOS"]]},{"n":21,"p":[["UD SIN DERECHOS","SANSE 04"],["RACING SANSE","SOBRASADA TEAM"],["LOGIA MASONICA","TERESILABOS"],["FC SALVATIERRA DE SANTIAGO","DEPORTIVO YAN"],["BIRRAREAL","GDD"],["SPORTIUM DE GIJON","PEDRO SANSE"],["SANT FRANCIS F.C (F7 SS)","SABADETE FC"]]},{"n":22,"p":[["SOBRASADA TEAM","SANSE 04"],["TERESILABOS","RACING SANSE"],["DEPORTIVO YAN","LOGIA MASONICA"],["GDD","FC SALVATIERRA DE SANTIAGO"],["PEDRO SANSE","BIRRAREAL"],["SABADETE FC","SPORTIUM DE GIJON"],["SANT FRANCIS F.C (F7 SS)","UD SIN DERECHOS"]]},{"n":23,"p":[["UD SIN DERECHOS","SOBRASADA TEAM"],["SANSE 04","TERESILABOS"],["RACING SANSE","DEPORTIVO YAN"],["LOGIA MASONICA","GDD"],["FC SALVATIERRA DE SANTIAGO","PEDRO SANSE"],["BIRRAREAL","SABADETE FC"],["SPORTIUM DE GIJON","SANT FRANCIS F.C (F7 SS)"]]},{"n":24,"p":[["TERESILABOS","SOBRASADA TEAM"],["DEPORTIVO YAN","SANSE 04"],["GDD","RACING SANSE"],["PEDRO SANSE","LOGIA MASONICA"],["SABADETE FC","FC SALVATIERRA DE SANTIAGO"],["SANT FRANCIS F.C (F7 SS)","BIRRAREAL"],["SPORTIUM DE GIJON","UD SIN DERECHOS"]]},{"n":25,"p":[["TERESILABOS","UD SIN DERECHOS"],["SOBRASADA TEAM","DEPORTIVO YAN"],["SANSE 04","GDD"],["RACING SANSE","PEDRO SANSE"],["LOGIA MASONICA","SABADETE FC"],["FC SALVATIERRA DE SANTIAGO","SANT FRANCIS F.C (F7 SS)"],["BIRRAREAL","SPORTIUM DE GIJON"]]},{"n":26,"p":[["DEPORTIVO YAN","TERESILABOS"],["SANT FRANCIS F.C (F7 SS)","LOGIA MASONICA"],["PEDRO SANSE","SANSE 04"],["SABADETE FC","RACING SANSE"],["GDD","SOBRASADA TEAM"],["SPORTIUM DE GIJON","FC SALVATIERRA DE SANTIAGO"],["UD SIN DERECHOS","BIRRAREAL"]]}];
@@ -3866,7 +3878,7 @@ class Component extends DCLogic {
           if (t.indexOf('amarilla') !== -1) d.ta++;
           if (t.indexOf('roja') !== -1) d.tr++;
         }
-        const m = t.match(/asist\.?\s*([^,·]+)/);
+        const m = esGolDeJugador(t) ? t.match(/asist\.?\s*([^,·]+)/) : null;
         if (m) { const aid = buscarId(m[1]); if (aid) dame(aid).asis++; }
       });
       const reparto = encajadosPorPortero(a, this.state.jugadores);
@@ -3981,7 +3993,9 @@ class Component extends DCLogic {
 
       if (que === 'acta') {
         if (!acta) { this.setState({ avisoGuardado:'No hay ningún acta que publicar.' }); return; }
-        const goles = (acta.eventos || []).filter(e => /gol/i.test(e.detalle)).map(e => e.min + "' " + e.jugador).join(', ');
+        const goles = (acta.eventos || [])
+          .filter(e => esGolDeJugador(e.detalle) || /propia(?! nuestro)/i.test(e.detalle || ''))
+          .map(e => esGolDeJugador(e.detalle) ? e.min + "' " + e.jugador : e.min + "' en propia del rival").join(', ');
         const gana = acta.gf > acta.gc, emp = acta.gf === acta.gc;
         base = { tipo:'resultado', fecha:hoyTexto(),
           titulo: acta.gf + ' - ' + acta.gc + (gana ? ' y tres puntos' : emp ? ' y reparto' : ''),
@@ -4270,8 +4284,8 @@ class Component extends DCLogic {
       const min = acta ? ((acta.minutos || []).find(m => m.id === p.id) || {}).min || 0 : 0;
       if (!min) return { total:0 };
       const media = mediaNota(p.id);
-      const gol = acta ? (acta.eventos || []).filter(e => e.jugador === p.nombre && /gol/i.test(e.detalle)).length : 0;
-      const asi = acta ? (acta.eventos || []).filter(e => new RegExp('asist\\.?\\s*' + p.nombre, 'i').test(e.detalle)).length : 0;
+      const gol = acta ? (acta.eventos || []).filter(e => e.jugador === p.nombre && esGolDeJugador(e.detalle)).length : 0;
+      const asi = acta ? (acta.eventos || []).filter(e => esGolDeJugador(e.detalle) && asistenteDe(e.detalle).toLowerCase() === p.nombre.toLowerCase()).length : 0;
       const ta = acta ? (acta.eventos || []).filter(e => e.jugador === p.nombre && /amarilla/i.test(e.detalle)).length : 0;
       const tr = acta ? (acta.eventos || []).filter(e => e.jugador === p.nombre && /roja/i.test(e.detalle)).length : 0;
       const rep = acta && p.pos === 'POR' ? (encajadosPorPortero(acta, JUG)[p.id] || null) : null;
@@ -5452,8 +5466,9 @@ class Component extends DCLogic {
         addEvento: () => this.patchActa(acta.id, { eventos: acta.eventos.concat([{ min:0, jugador:JUG[0].nombre, detalle:'Gol' }]) }),
         eventos: acta.eventos.map((ev, i) => {
           const t = (ev.detalle || '').toLowerCase();
-          const icono = /roja/.test(t) ? '🟥' : /amarilla/.test(t) ? '🟨' : /gol/.test(t) ? '⚽' : '•';
-          const col = /roja/.test(t) ? '#E4404A' : /amarilla/.test(t) ? '#F5C518' : /gol/.test(t) ? '#FF2E88' : '#8A8A96';
+          const pn = /propia nuestro/.test(t);
+          const icono = /roja/.test(t) ? '🟥' : /amarilla/.test(t) ? '🟨' : pn ? '🙈' : /gol/.test(t) ? '⚽' : '•';
+          const col = /roja/.test(t) ? '#E4404A' : /amarilla/.test(t) ? '#F5C518' : pn ? '#B06C4B' : /gol/.test(t) ? '#FF2E88' : '#8A8A96';
           return {
           icono,
           minStyle: 'font-family:Anton,sans-serif;font-size:15px;width:44px;flex:none;text-align:center;color:#0B0B0D;background:' + col + ';border-radius:6px;padding:2px 0',
@@ -5542,8 +5557,8 @@ class Component extends DCLogic {
         const ordenadas = [...st.actas].sort((a, b) => a.jornada - b.jornada);
         const datos = ordenadas.map(a => {
           const min = ((a.minutos || []).find(m => m.id === p.id) || {});
-          const gol = (a.eventos || []).filter(e => e.jugador === p.nombre && /gol/i.test(e.detalle)).length;
-          const asi = (a.eventos || []).filter(e => new RegExp('asist\\.?\\s*' + p.nombre, 'i').test(e.detalle)).length;
+          const gol = (a.eventos || []).filter(e => e.jugador === p.nombre && esGolDeJugador(e.detalle)).length;
+          const asi = (a.eventos || []).filter(e => esGolDeJugador(e.detalle) && asistenteDe(e.detalle).toLowerCase() === p.nombre.toLowerCase()).length;
           // «No jugó» no es lo mismo que «cero»: se marca aparte para no
           // dibujar un rendimiento que nunca existió.
           return { jornada:a.jornada, jugo: !!min.min, gol, asi, nota: min.nota || 0, min: min.min || 0 };
@@ -5592,8 +5607,8 @@ class Component extends DCLogic {
         ordenadas.forEach(a => {
           activos.forEach(p => {
             const m = (a.minutos || []).find(x => x.id === p.id);
-            if (clave === 'goles') acum[p.id] = (acum[p.id] || 0) + (a.eventos || []).filter(e => e.jugador === p.nombre && /gol/i.test(e.detalle)).length;
-            else if (clave === 'asis') acum[p.id] = (acum[p.id] || 0) + (a.eventos || []).filter(e => new RegExp('asist\\.?\\s*' + p.nombre, 'i').test(e.detalle)).length;
+            if (clave === 'goles') acum[p.id] = (acum[p.id] || 0) + (a.eventos || []).filter(e => e.jugador === p.nombre && esGolDeJugador(e.detalle)).length;
+            else if (clave === 'asis') acum[p.id] = (acum[p.id] || 0) + (a.eventos || []).filter(e => esGolDeJugador(e.detalle) && asistenteDe(e.detalle).toLowerCase() === p.nombre.toLowerCase()).length;
             else if (clave === 'min') acum[p.id] = (acum[p.id] || 0) + (m ? (m.min || 0) : 0);
             else if (clave === 'nota') {
               if (m && m.nota > 0) { acum[p.id] = (acum[p.id] || 0) + m.nota; cuenta[p.id] = (cuenta[p.id] || 0) + 1; }
@@ -6012,7 +6027,13 @@ class Component extends DCLogic {
       hayFeed: st.feed.length > 0, sinFeed: st.feed.length === 0,
       hayAvisos: st.avisos.length > 0, sinAvisos: st.avisos.length === 0,
       candidatos: convVotacion.map(p => ({
-        nombre:p.nombre, linea:p.goles + 'G · ' + p.asis + 'A',
+        nombre:p.nombre,
+        linea: (() => {
+          const ev = (ultimaActa && ultimaActa.eventos) || [];
+          const g = ev.filter(e => e.jugador === p.nombre && esGolDeJugador(e.detalle)).length;
+          const a = ev.filter(e => esGolDeJugador(e.detalle) && asistenteDe(e.detalle).toLowerCase() === p.nombre.toLowerCase()).length;
+          return g + 'G · ' + a + 'A';
+        })(),
         iniciales: p.foto ? '' : iniciales(p.nombre), avatarStyle: this.avatar(p, 34),
         votar: () => {
           if (mvpCerrado || !jornadaViva || esFan || miFicha === null || !puedoVotar) return;
