@@ -1356,7 +1356,7 @@
     <sc-if value="{{ esMvp }}">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
         <div style="font-family:'Anton',sans-serif;font-size:clamp(22px,5vw,30px);text-transform:uppercase">🏆 MVP</div>
-        <div style="display:flex;gap:6px;background:#141419;border:1px solid #26262E;border-radius:999px;padding:4px">
+        <div style="display:flex;gap:6px;background:#141419;border:1px solid #26262E;border-radius:999px;padding:4px;max-width:100%;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch">
           <sc-for list="{{ vistasMvp }}" as="v" hint-placeholder-count="3">
             <button onClick="{{ v.go }}" style="{{ v.style }}">{{ v.label }}</button>
           </sc-for>
@@ -3496,6 +3496,7 @@ class Component extends DCLogic {
   };
 
   componentDidMount() {
+    window.addEventListener('online', () => { if (this._reintentos) this.persistir(); });
     // Si viene de pulsar «Voy» en el aviso, la respuesta se guarda en
     // sessionStorage para que no se pierda ni pasando por el login.
     try {
@@ -3624,12 +3625,33 @@ class Component extends DCLogic {
         const r = await this._enGuardado;
         this._enGuardado = null;
         if (r && r.faltaSembrar) { await this.sembrarLiga(); return; }
+        // «Load failed» / «Failed to fetch» = el móvil perdió la conexión un
+        // momento (cambio de antena, app en segundo plano). No es un fallo de
+        // la app: se reintenta sola y solo se avisa si sigue sin red.
+        const sinRed = r && r.ok === false && /Load failed|Failed to fetch|NetworkError|network/i.test(r.error || '');
+        if (sinRed) {
+          this._reintentos = (this._reintentos || 0) + 1;
+          if (this._reintentos >= 3) this.setState({ avisoGuardado:'Sin conexión: tus cambios se guardarán en cuanto vuelva la red.' });
+          clearTimeout(this._tReintento);
+          this._tReintento = setTimeout(() => this.persistir(), Math.min(30000, 3000 * this._reintentos));
+          return;
+        }
+        if (this._reintentos) {
+          this._reintentos = 0;
+          if ((this.state.avisoGuardado || '').indexOf('Sin conexión') === 0) this.setState({ avisoGuardado:'' });
+        }
         // Solo se avisa si el guardado falla. Nunca se limpia el mensaje aquí:
         // borraría el que acabe de poner cualquier otra acción del usuario.
         if (r && r.ok === false) {
           this.setState({ avisoGuardado: r.error || 'No se pudo guardar en el servidor.' });
         }
       } catch (e) {
+        if (/Load failed|Failed to fetch|NetworkError/i.test(e && e.message || '')) {
+          this._enGuardado = null;
+          clearTimeout(this._tReintento);
+          this._tReintento = setTimeout(() => this.persistir(), 4000);
+          return;
+        }
         // Antes, un fallo aquí (de red, de permisos, lo que sea) se perdía
         // sin dejar rastro: el guardado simplemente no ocurría y no se veía
         // ningún aviso. Ahora se muestra siempre.
