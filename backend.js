@@ -284,6 +284,16 @@ export async function cargar() {
     favoritos,
     votoPorJornada,
     notas: nts.data || [],
+    perfilesLista: await (async () => {
+      if (sesion.rol !== 'mister') return [];
+      const r = await sb.from('perfiles').select('id, nombre, rol, jugador_id');
+      return r.error ? [] : (r.data || []);
+    })(),
+    anulaciones: await (async () => {
+      if (sesion.rol !== 'mister') return [];
+      const r = await sb.from('anulaciones').select('*');
+      return r.error ? [] : (r.data || []);
+    })(),
     multas: mul.data || [],
     pagos: pag.data || [],
     sugerencias: (() => {
@@ -810,6 +820,17 @@ export async function medirUso() {
   try { await recorrer(''); } catch (e) {}
 
   return { ok: true, conteos, archivos, mb: (bytes / (1024 * 1024)).toFixed(1), sinTamano };
+}
+
+/** Anula (o recupera) un voto o una nota. Solo el míster. El votante no se
+ *  entera: su voto sigue apareciéndole igual, pero no cuenta en el recuento. */
+export async function anular(tipo, jornada, votante, jugadorId, anulado) {
+  if (!sesion || sesion.rol !== 'mister') return { ok: false, error: 'Solo el míster.' };
+  const fila = { tipo, jornada, votante, jugador_id: jugadorId };
+  const r = anulado
+    ? await sb.from('anulaciones').upsert(fila, { onConflict: 'tipo,jornada,votante,jugador_id' })
+    : await sb.from('anulaciones').delete().match(fila);
+  return r.error ? { ok: false, error: r.error.message } : { ok: true };
 }
 
 export async function borrar(tabla, id) {

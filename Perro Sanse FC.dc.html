@@ -1497,6 +1497,57 @@
         </div>
       </sc-if>
 
+      <sc-if value="{{ mvpControl }}">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:16px">
+          <div style="font-size:13px;color:#8A8A96;max-width:560px">Solo lo ves tú. Lo que anules deja de contar para el MVP y las medias, pero a quien votó le sigue saliendo su voto igual.</div>
+          <select value="{{ controlJornada }}" onChange="{{ setControlJornada }}" style="{{ selectStyle }}">
+            <sc-for list="{{ opcionesControl }}" as="o" hint-placeholder-count="4">
+              <option value="{{ o.v }}">{{ o.label }}</option>
+            </sc-for>
+          </select>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:16px;margin-top:16px">
+          <div style="background:#101014;border:1px solid #26262E;border-radius:18px;padding:18px">
+            <div style="font-family:'Anton',sans-serif;font-size:18px;text-transform:uppercase">🏆 Votos al MVP</div>
+            <sc-if value="{{ control.hayVotos }}">
+              <div style="display:flex;flex-direction:column;gap:6px;margin-top:12px">
+                <sc-for list="{{ control.votos }}" as="v" hint-placeholder-count="6">
+                  <div style="{{ v.style }}">
+                    <div style="font-size:14px;color:#EDEDF2">{{ v.quien }}</div>
+                    <div style="font-size:13px;color:#6D6D7A">→</div>
+                    <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:15px;text-transform:uppercase;color:#F5C518">{{ v.a }}</div>
+                    <button onClick="{{ v.alternar }}" style="{{ v.botonStyle }}">{{ v.textoBoton }}</button>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+            <sc-if value="{{ control.sinVotos }}">
+              <div style="font-size:14px;color:#6D6D7A;margin-top:10px">Nadie ha votado aún.</div>
+            </sc-if>
+          </div>
+          <div style="background:#101014;border:1px solid #26262E;border-radius:18px;padding:18px">
+            <div style="font-family:'Anton',sans-serif;font-size:18px;text-transform:uppercase">📝 Notas</div>
+            <div style="font-size:12px;color:#6D6D7A;margin-top:4px">De menor a mayor. En rojo, las de 2 o menos.</div>
+            <sc-if value="{{ control.hayNotas }}">
+              <div style="display:flex;flex-direction:column;gap:6px;margin-top:12px;max-height:520px;overflow:auto">
+                <sc-for list="{{ control.notas }}" as="n" hint-placeholder-count="10">
+                  <div style="{{ n.style }}">
+                    <div style="{{ n.notaStyle }}">{{ n.nota }}</div>
+                    <div style="font-size:14px;color:#EDEDF2">{{ n.quien }}</div>
+                    <div style="font-size:13px;color:#6D6D7A">→</div>
+                    <div style="font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:15px;text-transform:uppercase">{{ n.a }}</div>
+                    <button onClick="{{ n.alternar }}" style="{{ n.botonStyle }}">{{ n.textoBoton }}</button>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+            <sc-if value="{{ control.sinNotas }}">
+              <div style="font-size:14px;color:#6D6D7A;margin-top:10px">Nadie ha puesto notas aún.</div>
+            </sc-if>
+          </div>
+        </div>
+      </sc-if>
+
       <sc-if value="{{ mvpHistorico }}">
         <sc-if value="{{ sinHistorico }}">
           <div style="background:#101014;border:1px dashed #2A2A33;border-radius:18px;padding:40px 24px;text-align:center;margin-top:16px">
@@ -3438,7 +3489,7 @@ class Component extends DCLogic {
     orden:'goles', vistaStats:'tabla', jugadorSel:null, compClave:'goles', votoPorJornada:{}, notas:[], misNotas:{}, vistaConv:'fotos', vistaMvp:'votacion',
     calVista:'lista', calMes:'todos', calJornada:'todas', rivalNum:null,
     actaSel:null, actaAbierta:null,
-    editandoCom:null, borradorCom:'', seguidoresMapa:null, subCuenta:'inicio', actividad:null, filtroActividad:'todos', verNovedades:false, novedadesPendientes:false,
+    editandoCom:null, borradorCom:'', anulaciones:[], controlJornada:null, seguidoresMapa:null, subCuenta:'inicio', actividad:null, filtroActividad:'todos', verNovedades:false, novedadesPendientes:false,
     postTipo:'aviso', postTitulo:'', postTexto:'', postFoto:'', avisoFeed:'', borradores:{}, editandoPost:null, borradorPost:null, misReacciones:{},
     listaFansRaw:[], avisoFans:'', confirmarBorrarFan:null,
     tipoCartel:'fichaje', protagonista:7, cartelFormato:'4:5 (feed vertical)', cartelExtra:'', copiado:false
@@ -4286,7 +4337,12 @@ class Component extends DCLogic {
     const votos = {};
     const votosJornada = todosVotos.filter(v => v.jornada === jornadaViva);
     const yaContado = votosJornada.some(v => v.votante === st.perfilId);
-    votosJornada.forEach(v => { votos[v.jugador_id] = (votos[v.jugador_id] || 0) + 1; });
+    const anulada = (tipo, jor, vot, jug) => (st.anulaciones || []).some(a =>
+      a.tipo === tipo && a.jornada === jor && a.votante === vot && (tipo === 'voto' || a.jugador_id === jug));
+    votosJornada.forEach(v => {
+      if (anulada('voto', v.jornada, v.votante)) return;
+      votos[v.jugador_id] = (votos[v.jugador_id] || 0) + 1;
+    });
     if (miVoto && !yaContado) votos[miVoto] = (votos[miVoto] || 0) + 1;
 
     // Notas que los compañeros se han puesto en esta jornada
@@ -4295,6 +4351,7 @@ class Component extends DCLogic {
     const notasJ = {};
     (st.notas || []).filter(n => n.jornada === jornadaViva).forEach(n => {
       if (n.votante === st.perfilId) return;
+      if (anulada('nota', n.jornada, n.votante, n.jugador_id)) return;
       (notasJ[n.jugador_id] = notasJ[n.jugador_id] || []).push(n.nota);
     });
     Object.keys(misNotasJ).forEach(id => { (notasJ[id] = notasJ[id] || []).push(misNotasJ[id]); });
@@ -5970,10 +6027,55 @@ class Component extends DCLogic {
         rowStyle:'display:grid;grid-template-columns:44px 30px minmax(180px,2fr) repeat(7,minmax(46px,.5fr));min-width:730px;padding:12px 16px;border-bottom:1px solid #17171D;border-left:3px solid ' + zona + ';align-items:center;font-size:14px;color:#C9C9D2;transition:background .2s ease,transform .2s ease,box-shadow .22s ease;--brillo:' + e.color + ';background:' + (e.nuestro ? 'rgba(255,46,136,.10)' : 'transparent')
       }; }),
 
-      vistasMvp: (esFan ? [['votacion','Jornada'],['historico','Histórico'],['ranking','Ranking']] : [['votacion','Votación'],['notas','Notas'],['historico','Histórico'],['ranking','Ranking']]).map(([k, label]) => ({ label, style:this.tabBtn(st.vistaMvp === k), go:() => this.setState({ vistaMvp:k }) })),
+      vistasMvp: (esFan ? [['votacion','Jornada'],['historico','Histórico'],['ranking','Ranking']] : [['votacion','Votación'],['notas','Notas'],['historico','Histórico'],['ranking','Ranking']].concat(admin ? [['control','🔒 Control']] : [])).map(([k, label]) => ({ label, style:this.tabBtn(st.vistaMvp === k), go:() => this.setState({ vistaMvp:k }) })),
       mvpVotacion: st.vistaMvp === 'votacion' || (esFan && st.vistaMvp === 'notas'),
       mvpNotas: st.vistaMvp === 'notas' && !esFan,
       mvpHistorico: st.vistaMvp === 'historico', mvpRanking: st.vistaMvp === 'ranking',
+      mvpControl: st.vistaMvp === 'control' && admin,
+      controlJornada: st.controlJornada || jornadaViva || '',
+      setControlJornada: e => this.setState({ controlJornada: parseInt(e.target.value, 10) }),
+      opcionesControl: [...st.actas].sort((a, b) => b.jornada - a.jornada).map(a => ({ v:a.jornada, label:'Jornada ' + a.jornada + ' · ' + a.rival })),
+      control: (() => {
+        if (!admin) return { votos:[], notas:[] };
+        const jor = st.controlJornada || jornadaViva;
+        const perfiles = st.perfilesLista || [];
+        const nombreDe = (uid) => {
+          const pf = perfiles.find(x => x.id === uid);
+          if (pf) return (pf.nombre || 'Sin nombre') + (pf.rol === 'fan' ? ' (fan)' : '');
+          return uid === st.perfilId ? 'Tú' : 'Usuario ' + String(uid).slice(0, 6);
+        };
+        const jugNombre = (id) => (JUG.find(x => x.id === id) || { nombre:'—' }).nombre;
+        const fila = (anul) => 'display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:9px 12px;border-radius:10px;background:' + (anul ? '#1A0F14' : '#16161C') + ';border:1px solid ' + (anul ? '#E4404A55' : '#24242C') + ';opacity:' + (anul ? '.6' : '1');
+        const boton = (anul) => 'margin-left:auto;border-radius:8px;padding:6px 12px;cursor:pointer;font-weight:600;font-size:12px;border:1px solid ' + (anul ? '#2FA8A0' : '#E4404A') + ';background:transparent;color:' + (anul ? '#2FA8A0' : '#FF6FAC');
+        const cambiar = async (tipo, votante, jugId, nuevo) => {
+          const r = await this.bk.anular(tipo, jor, votante, jugId, nuevo);
+          if (!r.ok) { this.setState({ avisoGuardado:'No se pudo: ' + r.error + ' (¿has creado la tabla «anulaciones»?)' }); return; }
+          this.setState(s => ({ anulaciones: nuevo
+            ? (s.anulaciones || []).concat([{ tipo, jornada:jor, votante, jugador_id:jugId }])
+            : (s.anulaciones || []).filter(a => !(a.tipo === tipo && a.jornada === jor && a.votante === votante && a.jugador_id === jugId)) }));
+        };
+        const votosLista = todosVotos.filter(v => v.jornada === jor).map(v => {
+          const anul = anulada('voto', jor, v.votante);
+          return { quien:nombreDe(v.votante), a:jugNombre(v.jugador_id), anul,
+            estado: anul ? 'Anulado' : 'Cuenta', style:fila(anul), botonStyle:boton(anul),
+            textoBoton: anul ? 'Recuperar' : 'Anular',
+            alternar: () => cambiar('voto', v.votante, v.jugador_id, !anul) };
+        });
+        const notasLista = (st.notas || []).filter(n => n.jornada === jor)
+          .sort((x, y) => x.nota - y.nota)
+          .map(n => {
+            const anul = anulada('nota', jor, n.votante, n.jugador_id);
+            const sospechosa = n.nota <= 2;
+            return { quien:nombreDe(n.votante), a:jugNombre(n.jugador_id), nota:n.nota, anul,
+              notaStyle:'font-family:Anton,sans-serif;font-size:17px;width:30px;text-align:center;color:' + (sospechosa ? '#E4404A' : n.nota >= 8 ? '#2FA8A0' : '#EDEDF2'),
+              sospechosa,
+              style:fila(anul), botonStyle:boton(anul), textoBoton: anul ? 'Recuperar' : 'Anular',
+              alternar: () => cambiar('nota', n.votante, n.jugador_id, !anul) };
+          });
+        return { votos:votosLista, notas:notasLista, hayVotos:votosLista.length > 0, hayNotas:notasLista.length > 0,
+          sinVotos:votosLista.length === 0, sinNotas:notasLista.length === 0,
+          nAnulados: (st.anulaciones || []).filter(a => a.jornada === jor).length };
+      })(),
       verMediasNotas: verMedias,
       textoNotas: !jornadaViva ? 'Todavía no hay ningún partido jugado'
         : 'Puntúa del 0 al 10 a los que jugaron la jornada ' + jornadaViva + ' contra ' + (ultimaActa ? ultimaActa.rival : ''),
