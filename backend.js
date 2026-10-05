@@ -153,7 +153,7 @@ export async function recuperarPass(email) {
 export async function cargar() {
   if (!sesion) return null;
 
-  const [jug, cam, par, act, avi, pub, com, lkc, fav, vot, cla, cvs, als, nts, mul, pag, sug, svo, aju, eco, equ, tem, his, pl, pr] = await Promise.all([
+  const [jug, cam, par, act, avi, pub, com, lkc, fav, vot, cla, cvs, als, nts, mul, pag, sug, svo, aju, eco, equ, rsl, tem, his, pl, pr] = await Promise.all([
     sb.from('jugadores').select('*').order('id'),
     sb.from('campos').select('*').order('id'),
     sb.from('partidos').select('*').order('num'),
@@ -175,6 +175,7 @@ export async function cargar() {
     sb.from('ajustes').select('*').eq('clave', 'visibilidad').maybeSingle(),
     sb.from('ajustes').select('*').eq('clave', 'economia').maybeSingle(),
     sb.from('ajustes').select('*').eq('clave', 'equipaciones').maybeSingle(),
+    sb.from('ajustes').select('*').eq('clave', 'resultados_liga').maybeSingle(),
     sb.from('temporadas').select('*').order('id', { ascending: false }),
     sb.from('historico_liga').select('*').order('jornada'),
     sb.from('post_likes').select('*'),
@@ -312,6 +313,7 @@ export async function cargar() {
     visibilidad: (aju && aju.data && aju.data.valor) || null,
     economia: (eco && eco.data && eco.data.valor) || null,
     fotosEquipacion: (equ && equ.data && equ.data.valor) || null,
+    resultadosLiga: (rsl && rsl.data && rsl.data.valor) || {},
     temporadas: tem.data || [],
     historicoLiga: his.data || [],
     misNotas: (() => {
@@ -414,6 +416,15 @@ export async function guardarEconomia(multas, pagos, sugerencias) {
 }
 
 /** Qué ven los jugadores y los fans. Solo el míster lo cambia. */
+/** Resultados de cada jornada de liga, partido a partido. Con ellos la
+ *  clasificación se puede rehacer y cualquier jornada se puede corregir. */
+export async function guardarResultadosLiga(valor) {
+  if (!sesion || sesion.rol !== 'mister') return { ok: false, error: 'Solo el míster.' };
+  const { error } = await sb.from('ajustes')
+    .upsert({ clave: 'resultados_liga', valor }, { onConflict: 'clave' });
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
 export async function guardarEconomiaAjustes(economia) {
   if (!sesion || sesion.rol !== 'mister') return { ok: false, error: 'Solo el míster.' };
   const { error } = await sb.from('ajustes')
@@ -427,7 +438,7 @@ export async function guardarFotoLiga(jornada, tabla) {
   if (!sesion || sesion.rol !== 'mister') return { ok: false, error: 'Solo el míster.' };
   const filas = (tabla || []).map((e, i) => ({
     jornada, nombre: e.nombre, puesto: i + 1,
-    pts: e.g * 3 + e.e, gf: e.gf, gc: e.gc, color: e.color
+    pts: e.g * 3 + e.e - (e.sancion || 0), gf: e.gf, gc: e.gc, color: e.color
   }));
   if (!filas.length) return { ok: false, error: 'La clasificación está vacía.' };
   const { error } = await sb.from('historico_liga')
@@ -506,7 +517,7 @@ export async function guardar(datos) {
       sb.from('convocatorias').upsert(filasConvocatorias(datos, jornada)),
       conId.length ? sb.from('clasificacion').upsert(conId.map(e => ({
         id: e.id, nombre: e.nombre, color: e.color, pos_ant: e.pos_ant || null,
-        pj: e.pj, g: e.g, e: e.e, p: e.p, gf: e.gf, gc: e.gc, racha: e.racha, nuestro: !!e.nuestro
+        pj: e.pj, g: e.g, e: e.e, p: e.p, gf: e.gf, gc: e.gc, sancion: e.sancion || 0, racha: e.racha, nuestro: !!e.nuestro
       }))) : Promise.resolve({})
     ]);
 
