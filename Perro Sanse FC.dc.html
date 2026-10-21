@@ -2244,6 +2244,9 @@
         <div style="background:#101014;border:1px solid #26262E;border-radius:18px;padding:20px;margin-top:16px;max-width:620px">
           <div style="font-family:'Anton',sans-serif;font-size:18px;text-transform:uppercase">📣 Mandar un aviso al equipo</div>
           <div style="font-size:13px;color:#8A8A96;margin-top:4px">Llega a todos los que tengan los avisos activados.</div>
+          <sc-if value="{{ hayResumenAvisos }}">
+            <div style="font-size:12px;color:#2FA8A0;margin-top:6px">📱 {{ textoResumenAvisos }}</div>
+          </sc-if>
           <div style="{{ labelStyle }}">¿A quién se lo mandas?</div>
           <select value="{{ destinoAviso }}" onChange="{{ setDestinoAviso }}" style="{{ inputStyle }}">
             <sc-for list="{{ opcionesDestino }}" as="o" hint-placeholder-count="4">
@@ -3511,7 +3514,7 @@ class Component extends DCLogic {
     contadores:null, confeti:[], celebracion:null, arrastrando:null, vistaCampo:'2d', tabAnim:0, anuncio:null, jornadaHist:null, nombreTemporada:'', altaEmail:'', altaJugador:null, altaAviso:'', sugerencias:[], textoSugerencia:'', graciasSugerencia:false,
     mensajeGrupo:'', copiadoGrupo:false, resultadoAviso:'', confirmarBorrado:null,
     estadoAvisos:'default', appInstalada:false, pushIncompleto:false, avisoInstalar:'', resultadoEnvio:'', envioOk:false,
-    destinoAviso:'todos', jugadorAviso:null, enviandoAviso:false, tituloAviso:'', cuerpoAviso:'', guiaSel:'ios',
+    destinoAviso:'todos', jugadorAviso:null, enviandoAviso:false, resumenAvisos:null, tituloAviso:'', cuerpoAviso:'', guiaSel:'ios',
     nuevaMultaTipo:'tarde', nuevaMultaJugador:null, nuevaMultaImporte:2, nuevaMultaNota:'',
     economia:ECONOMIA_POR_DEFECTO, editandoCaja:null, cobroJugador:null, cobroImporte:'', cobroConcepto:'cuota',
     seleccion:null, ficha:null,
@@ -3573,6 +3576,11 @@ class Component extends DCLogic {
   }
 
   async traer() {
+    if (this.bk && this.bk.sincronizarSuscripcion) {
+      this.bk.sincronizarSuscripcion().then(() => {
+        if (this.state.rol === 'mister' && this.bk.resumenAvisos) this.bk.resumenAvisos().then(r => { if (r) this.setState({ resumenAvisos:r }); });
+      });
+    }
     const datos = await this.bk.cargar();
     if (!datos) return;
     delete datos.fans;
@@ -4296,7 +4304,8 @@ class Component extends DCLogic {
 
   dificultad(rivalNombre) {
     const tabla = ordenarLiga(this.state.clasificacion || []);
-    const r = eqLiga(tabla, rivalNombre), yo = eqLiga(tabla, 'Perro Sanse F.C.');
+    const r = eqLiga(tabla, rivalNombre);
+    const yo = tabla.find(e => e.nuestro) || eqLiga(tabla, this.nombreNuestro());
     const posR = tabla.indexOf(r) + 1, posYo = tabla.indexOf(yo) + 1;
     const dif = pts(r) - pts(yo);
     const sinDatos = !r.pj && !yo.pj;
@@ -4306,11 +4315,22 @@ class Component extends DCLogic {
     }
     const gcMedia = r.pj ? (r.gc / r.pj).toFixed(1) : '—', gfMedia = r.pj ? (r.gf / r.pj).toFixed(1) : '—';
     const directo = !sinDatos && Math.abs(posR - posYo) <= 2;
+    const CIERRE = {
+      5: 'Rival muy fuerte: hay que ir a por todas y no regalar nada.',
+      4: 'Partido difícil: concentración desde el primer minuto.',
+      3: 'Partido igualado: lo decidirá el detalle.',
+      2: 'Partido asequible, pero sin relajarse.',
+      1: 'Muy asequible: toca sumar los tres puntos.'
+    };
+    const rel = dif > 0 ? 'Van ' + dif + ' punto' + (dif === 1 ? '' : 's') + ' por encima de nosotros. '
+      : dif < 0 ? 'Les sacamos ' + Math.abs(dif) + ' punto' + (Math.abs(dif) === 1 ? '' : 's') + '. '
+      : 'Igualados a puntos con nosotros. ';
     const lectura = sinDatos
       ? 'Todavía no hay datos de la liga. Rellena la clasificación y aquí saldrá el análisis del rival.'
-      : (posR < posYo ? 'Van por delante nuestro, ' + Math.abs(dif) + ' puntos arriba. ' : posR > posYo ? 'Van por detrás, les sacamos ' + Math.abs(dif) + ' puntos. ' : 'Empatados a puntos con nosotros. ')
+      : rel
         + 'Marcan ' + gfMedia + ' goles por partido y encajan ' + gcMedia + '. '
-        + (directo ? 'Rival directo: este partido vale doble en la tabla.' : posR < posYo ? 'Partido para sacar algo y recortar arriba.' : 'A ganar sin relajarse, es de los que hay que sumar.');
+        + (directo ? 'Es un rival directo en la tabla. ' : '')
+        + CIERRE[score];
     return { r, posR, posYo, dif, score, lectura, directo, gcMedia, gfMedia, sinDatos };
   }
 
@@ -4688,6 +4708,10 @@ class Component extends DCLogic {
       setTituloAviso: e => this.setState({ tituloAviso:e.target.value }),
       cuerpoAviso: st.cuerpoAviso || '',
       setCuerpoAviso: e => this.setState({ cuerpoAviso:e.target.value }),
+      hayResumenAvisos: !!st.resumenAvisos,
+      textoResumenAvisos: st.resumenAvisos
+        ? st.resumenAvisos.total + ' móvil(es) registrados · ' + st.resumenAvisos.jugadores + ' jugadores · ' + st.resumenAvisos.fans + ' fans · ' + st.resumenAvisos.mister + ' míster'
+        : '',
       destinoAviso: st.destinoAviso || 'todos',
       setDestinoAviso: e => this.setState({ destinoAviso:e.target.value, jugadorAviso:null }),
       opcionesDestino: [
@@ -5955,7 +5979,7 @@ class Component extends DCLogic {
           total, jornadas: jor.map(j => ({ etiqueta:'J' + j })),
           rejilla: rejilla(total - 1, Math.min(4, Math.max(1, total - 1)), v => Math.round(v + 1) + 'º').reverse(),
           lineas: nombres.map(n => {
-            const nuestro = n === 'Perro Sanse F.C.';
+            const nuestro = n === this.nombreNuestro();
             const puntos = jor.map((j, i) => {
               const fila = hist.find(h => h.jornada === j && h.nombre === n);
               return { i, puesto: fila ? fila.puesto : null, pts: fila ? fila.pts : 0, j };
@@ -5973,7 +5997,7 @@ class Component extends DCLogic {
           }),
           leyenda: nombres.map(n => ({
             nombre:n,
-            style: 'display:flex;align-items:center;gap:6px;font-size:11px;color:' + (n === 'Perro Sanse F.C.' ? '#EDEDF2' : '#8A8A96') + ';font-weight:' + (n === 'Perro Sanse F.C.' ? '700' : '400'),
+            style: 'display:flex;align-items:center;gap:6px;font-size:11px;color:' + (n === this.nombreNuestro() ? '#EDEDF2' : '#8A8A96') + ';font-weight:' + (n === this.nombreNuestro() ? '700' : '400'),
             punto: 'width:9px;height:9px;border-radius:50%;flex:none;background:' + colorDe(n)
           }))
         };

@@ -748,14 +748,66 @@ export async function activarAvisos() {
     }
   }
   const datos = sub.toJSON();
-  const { error } = await sb.from('push_subs').upsert({
+  // Borrar + insertar en vez de upsert: el upsert obliga a poder leer la
+  // fila, y solo el míster puede leer esa tabla. Por eso los jugadores no
+  // llegaban a quedar registrados aunque dieran el permiso.
+  await sb.from('push_subs').delete().eq('endpoint', datos.endpoint);
+  const { error } = await sb.from('push_subs').insert({
     perfil_id: sesion ? sesion.perfilId : null,
     endpoint: datos.endpoint,
     p256dh: datos.keys.p256dh,
     auth: datos.keys.auth
-  }, { onConflict: 'endpoint' });
-  if (error) return { ok: false, error: error.message };
+  });
+  if (error) return { ok: false, error: 'No se pudo registrar este móvil: ' + error.message };
   return { ok: true };
+}
+
+/** Cuántos móviles hay registrados y de quién (solo míster). */
+export async function resumenAvisos() {
+  if (!sesion || sesion.rol !== 'mister') return null;
+  const [s, p] = await Promise.all([
+    sb.from('push_subs').select('perfil_id'),
+    sb.from('perfiles').select('id, rol, jugador_id')
+  ]);
+  if (s.error || p.error) return null;
+  const porId = {};
+  (p.data || []).forEach(x => { porId[x.id] = x; });
+  const r = { total: (s.data || []).length, jugadores: 0, fans: 0, mister: 0, sinDueno: 0 };
+  (s.data || []).forEach(x => {
+    const pf = porId[x.perfil_id];
+    if (!pf) r.sinDueno++;
+    else if (pf.rol === 'fan') r.fans++;
+    else if (pf.rol === 'mister') r.mister++;
+    else r.jugadores++;
+  });
+  return r;
+}
+
+/** Deja registrado este dispositivo a nombre de la sesión actual. Se llama
+ *  en cada entrada: si la fila no existía, tenía otro dueño o se borró por
+ *  caducada, queda arreglada sin que el jugador toque nada. */
+export async function sincronizarSuscripcion() {
+  try {
+    if (!sesion || !VAPID_PUBLICA || !pushDisponible()) return { ok: false };
+    if (Notification.permission !== 'granted') return { ok: false };
+    const reg = (await navigator.serviceWorker.getRegistration()) || (await registrarServiceWorker());
+    if (!reg) return { ok: false };
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: claveABytes(VAPID_PUBLICA) });
+    }
+    const d = sub.toJSON();
+    // borrar + insertar: el upsert necesitaría permiso de UPDATE sobre filas
+    // que pueden ser de un perfil anterior en el mismo móvil.
+    await sb.from('push_subs').delete().eq('endpoint', d.endpoint);
+    const { error } = await sb.from('push_subs').insert({
+      perfil_id: sesion.perfilId, endpoint: d.endpoint, p256dh: d.keys.p256dh, auth: d.keys.auth
+    });
+    if (error) console.warn('push_subs:', error.message);
+    return error ? { ok: false, error: error.message } : { ok: true };
+  } catch (e) {
+    return { ok: false, error: e && e.message };
+  }
 }
 
 export async function desactivarAvisos() {
@@ -785,7 +837,18 @@ export async function enviarAviso(titulo, cuerpo, destino, opciones) {
         opciones && opciones.tipo ? { tipo: opciones.tipo, jornada: opciones.jornada } : {})
     });
     if (error) return { ok: false, error: 'La función del servidor no responde (paso 6sexies de SUPABASE.md).' };
-    return { ok: true, enviados: (data && data.enviados) || 0 };
+    const enviados = (data && data.enviados) || 0;
+    const total = data && data.total != null ? data.total : null;
+    const registrados = data && data.registrados != null ? data.registrados : null;
+    if (!enviados) {
+      const motivo = registrados === 0
+        ? 'Nadie tiene registrado el móvil para recibir avisos todavía.'
+        : total === 0
+          ? 'Hay ' + registrados + ' móvil(es) registrados, pero ninguno de ese grupo.'
+          : 'Los ' + total + ' móvil(es) del grupo rechazaron el aviso.';
+      return { ok: false, error: 'No llegó a nadie. ' + motivo };
+    }
+    return { ok: true, enviados, total, registrados };
   } catch (e) {
     return { ok: false, error: 'Falta desplegar la función de envío (paso 6sexies de SUPABASE.md).' };
   }
