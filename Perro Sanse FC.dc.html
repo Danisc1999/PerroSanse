@@ -664,10 +664,12 @@
               <div style="font-family:'Anton',sans-serif;font-size:22px;color:#F2841E">{{ minutosPortero }}'</div>
             </div>
           </sc-if>
-          <div style="margin-top:14px;padding-top:14px;border-top:1px solid #24242C">
-            <div style="font-family:'Barlow Condensed',sans-serif;letter-spacing:.18em;font-size:11px;color:#F5C518;text-transform:uppercase">🔄 Rotación</div>
-            <div style="font-size:13px;color:#C9C9D2;margin-top:4px">{{ sugerenciaRotacion }}</div>
-          </div>
+          <sc-if value="{{ verSugerenciaMinutos }}">
+            <div style="margin-top:14px;padding-top:14px;border-top:1px solid #24242C">
+              <div style="font-family:'Barlow Condensed',sans-serif;letter-spacing:.18em;font-size:11px;color:#F5C518;text-transform:uppercase">🔄 Rotación</div>
+              <div style="font-size:13px;color:#C9C9D2;margin-top:4px">{{ sugerenciaRotacion }}</div>
+            </div>
+          </sc-if>
           <sc-if value="{{ puedePublicarJornada }}">
             <button onClick="{{ publicarConvocatoria }}" style="width:100%;margin-top:14px;background:#FF2E88;color:#0B0B0D;border:0;border-radius:12px;padding:12px;font-weight:700;font-size:15px;cursor:pointer">📣 Publicar convocatoria</button>
           </sc-if>
@@ -978,11 +980,24 @@
               <button onClick="{{ acta.repartir }}" title="6 puestos × 50' entre los de campo; 50' de portería entre los porteros" style="background:#16161C;border:1px solid #33333D;color:#EDEDF2;border-radius:10px;padding:7px 12px;font-size:13px;font-weight:600;cursor:pointer">↻ Repartir minutos</button>
             </sc-if>
           </div>
+          <sc-if value="{{ esAdmin }}">
+            <sc-if value="{{ hayUltimaHora }}">
+              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px;background:#16161C;border:1px dashed #33333D;border-radius:12px;padding:10px">
+                <div style="font-size:12px;color:#F5C518;font-family:'Barlow Condensed',sans-serif;letter-spacing:.1em;text-transform:uppercase">⏱ Vino de última hora</div>
+                <select value="{{ ultimaHoraSel }}" onChange="{{ setUltimaHoraSel }}" style="{{ inputStyle }};flex:1;min-width:150px">
+                  <sc-for list="{{ opcionesUltimaHora }}" as="o" hint-placeholder-count="5">
+                    <option value="{{ o.v }}">{{ o.label }}</option>
+                  </sc-for>
+                </select>
+                <button onClick="{{ anadirUltimaHora }}" style="background:#F5C518;color:#0B0B0D;border:0;border-radius:10px;padding:9px 14px;font-weight:700;cursor:pointer">Añadir al acta</button>
+              </div>
+            </sc-if>
+          </sc-if>
           <sc-for list="{{ acta.minutos }}" as="m" hint-placeholder-count="8">
             <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #1C1C22">
               <div style="{{ m.avatarStyle }}">{{ m.iniciales }}</div>
               <div style="flex:1;min-width:0">
-                <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:600;text-transform:uppercase">{{ m.nombre }}</div>
+                <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:600;text-transform:uppercase">{{ m.nombre }}<sc-if value="{{ m.tarde }}"><span style="margin-left:8px;font-size:10px;letter-spacing:.1em;color:#F5C518;border:1px solid #F5C518;border-radius:999px;padding:2px 7px;vertical-align:middle">⏱ ÚLTIMA HORA</span></sc-if></div>
                 <div style="height:5px;background:#1C1C22;border-radius:5px;margin-top:4px;overflow:hidden">
                   <div style="{{ m.barraStyle }}"></div>
                 </div>
@@ -1048,11 +1063,12 @@
               <button onClick="{{ v.go }}" style="{{ v.style }}">{{ v.label }}</button>
             </sc-for>
           </div>
-          <div style="display:flex;gap:6px;background:#141419;border:1px solid #26262E;border-radius:999px;padding:4px;overflow-x:auto">
+          <div style="display:flex;gap:6px;background:#141419;border:1px solid #26262E;border-radius:18px;padding:4px;flex-wrap:wrap;max-width:100%">
             <sc-for list="{{ ordenaciones }}" as="o" hint-placeholder-count="6">
               <button onClick="{{ o.go }}" style="{{ o.style }}">{{ o.label }}</button>
             </sc-for>
           </div>
+          <div style="width:100%;font-size:12px;color:#6D6D7A">↔ La tabla se desliza hacia los lados (o gira el móvil) para ver todas las columnas</div>
         </div>
       </div>
       <sc-if value="{{ statsGrafica }}">
@@ -1315,6 +1331,44 @@
         </div>
       </sc-if>
 
+      <div style="margin-bottom:16px">
+        <button onClick="{{ alternarResultados }}" style="background:#16161C;border:1px solid #33333D;color:#EDEDF2;border-radius:12px;padding:11px 16px;font-weight:600;cursor:pointer">{{ textoBotonResultados }}</button>
+        <sc-if value="{{ verResultadosLiga }}">
+          <div style="background:#101014;border:1px solid #26262E;border-radius:18px;padding:16px;margin-top:12px">
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              <select value="{{ resJornada }}" onChange="{{ setResJornada }}" style="{{ selectStyle }}">
+                <sc-for list="{{ opcionesResJornada }}" as="o" hint-placeholder-count="4"><option value="{{ o.v }}">{{ o.label }}</option></sc-for>
+              </select>
+              <select value="{{ resEquipo }}" onChange="{{ setResEquipo }}" style="{{ selectStyle }}">
+                <sc-for list="{{ opcionesResEquipo }}" as="o" hint-placeholder-count="6"><option value="{{ o.v }}">{{ o.label }}</option></sc-for>
+              </select>
+            </div>
+            <sc-if value="{{ sinResultadosLiga }}">
+              <div style="font-size:14px;color:#6D6D7A;margin-top:14px">Todavía no hay resultados guardados con ese filtro.</div>
+            </sc-if>
+            <div style="display:flex;flex-direction:column;gap:14px;margin-top:14px">
+              <sc-for list="{{ resultadosFiltrados }}" as="j" hint-placeholder-count="2">
+                <div>
+                  <div style="font-family:'Anton',sans-serif;font-size:15px;color:#FF2E88;text-transform:uppercase">Jornada {{ j.jornada }}</div>
+                  <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px">
+                    <sc-for list="{{ j.partidos }}" as="p" hint-placeholder-count="7">
+                      <div style="{{ p.rowStyle }}">
+                        <div style="flex:1;text-align:right;font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:15px;text-transform:uppercase">{{ p.local }}</div>
+                        <div style="{{ p.localBadge }}">{{ p.localSigla }}</div>
+                        <div style="font-family:'Anton',sans-serif;font-size:17px;min-width:56px;text-align:center">{{ p.marcador }}</div>
+                        <div style="{{ p.visitaBadge }}">{{ p.visitaSigla }}</div>
+                        <div style="flex:1;font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:15px;text-transform:uppercase">{{ p.visita }}</div>
+                        <sc-if value="{{ p.np }}"><div style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:#16161C;font-size:10px;color:#E4404A;border:1px solid #E4404A;border-radius:999px;padding:2px 7px">NO SE PRESENTÓ</div></sc-if>
+                      </div>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+
       <sc-if value="{{ hayZonas }}">
         <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px;font-size:12px;color:#8A8A96">
           <div><span style="color:#F5C518">▌</span> Líder</div>
@@ -1514,6 +1568,24 @@
             </sc-for>
           </select>
         </div>
+        <sc-if value="{{ control.hayParticipacion }}">
+          <div style="background:#101014;border:1px solid #26262E;border-radius:18px;padding:18px;margin-top:16px">
+            <div style="font-family:'Anton',sans-serif;font-size:18px;text-transform:uppercase">📊 Participación</div>
+            <div style="display:flex;gap:28px;flex-wrap:wrap;margin-top:12px">
+              <div><div style="font-family:'Anton',sans-serif;font-size:30px;line-height:1">{{ control.resumenMvp }}</div><div style="font-size:12px;color:#8A8A96;margin-top:4px">han votado el MVP</div></div>
+              <div><div style="font-family:'Anton',sans-serif;font-size:30px;line-height:1">{{ control.resumenNotas }}</div><div style="font-size:12px;color:#8A8A96;margin-top:4px">han puesto notas</div></div>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:14px">
+              <sc-for list="{{ control.participacion }}" as="p" hint-placeholder-count="9">
+                <div style="{{ p.style }}">
+                  <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:15px;text-transform:uppercase">{{ p.nombre }}</div>
+                  <div style="font-size:11px;color:#8A8A96">{{ p.marca }}</div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="font-size:11px;color:#6D6D7A;margin-top:12px">Verde: ya hizo las dos cosas · Ámbar: falta una · Rojo: no ha hecho nada.</div>
+          </div>
+        </sc-if>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:16px;margin-top:16px">
           <div style="background:#101014;border:1px solid #26262E;border-radius:18px;padding:18px">
             <div style="font-family:'Anton',sans-serif;font-size:18px;text-transform:uppercase">🏆 Votos al MVP</div>
@@ -2126,6 +2198,88 @@
       </sc-if>
     </sc-if>
 
+    <sc-if value="{{ esPropuestas }}">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <div style="font-family:'Anton',sans-serif;font-size:clamp(22px,5vw,30px);text-transform:uppercase">💡 Propuestas de alineación</div>
+        <button onClick="{{ actualizarPropuestas }}" style="background:#16161C;border:1px solid #33333D;color:#EDEDF2;border-radius:10px;padding:9px 14px;font-weight:600;cursor:pointer">↻ Actualizar</button>
+      </div>
+      <div style="font-size:14px;color:#8A8A96;margin-top:4px">{{ propJornadaTexto }}. Cada uno propone su once, todos pueden verlo y votarlo. El míster decide.</div>
+
+      <sc-if value="{{ puedeProponer }}">
+        <div style="background:#101014;border:1px solid #26262E;border-radius:18px;padding:18px;margin-top:16px">
+          <div style="font-family:'Anton',sans-serif;font-size:18px;text-transform:uppercase">Tu propuesta</div>
+          <div style="font-size:12px;color:#6D6D7A;margin-top:2px">{{ textoBaseProp }}</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px">
+            <sc-for list="{{ formacionesProp }}" as="fm" hint-placeholder-count="3">
+              <button onClick="{{ fm.go }}" style="{{ fm.style }}">{{ fm.label }}</button>
+            </sc-for>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:14px">
+            <sc-for list="{{ slotsProp }}" as="s" hint-placeholder-count="7">
+              <div style="display:flex;align-items:center;gap:10px">
+                <div style="{{ s.rolStyle }}">{{ s.rol }}</div>
+                <select value="{{ s.valor }}" onChange="{{ s.set }}" style="{{ inputStyle }};flex:1">
+                  <sc-for list="{{ s.opciones }}" as="o" hint-placeholder-count="10">
+                    <option value="{{ o.v }}">{{ o.label }}</option>
+                  </sc-for>
+                </select>
+              </div>
+            </sc-for>
+          </div>
+          <button onClick="{{ enviarPropuesta }}" style="margin-top:14px;background:#FF2E88;color:#0B0B0D;border:0;border-radius:12px;padding:12px 20px;font-weight:700;cursor:pointer">Enviar propuesta</button>
+        </div>
+      </sc-if>
+
+      <div style="display:flex;gap:6px;background:#141419;border:1px solid #26262E;border-radius:999px;padding:4px;margin-top:20px;max-width:100%;overflow-x:auto;width:fit-content">
+        <sc-for list="{{ gruposProp }}" as="g" hint-placeholder-count="2">
+          <button onClick="{{ g.go }}" style="{{ g.style }}">{{ g.label }}</button>
+        </sc-for>
+      </div>
+
+      <sc-if value="{{ sinPropuestas }}">
+        <div style="background:#101014;border:1px dashed #2A2A33;border-radius:18px;padding:34px 24px;text-align:center;margin-top:16px;max-width:560px">
+          <div style="font-size:30px;opacity:.5">💡</div>
+          <div style="font-size:14px;color:#8A8A96;margin-top:8px">Todavía no hay propuestas de este grupo para esta jornada.</div>
+        </div>
+      </sc-if>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,280px),1fr));gap:14px;margin-top:16px">
+        <sc-for list="{{ propuestasLista }}" as="p" hint-placeholder-count="3">
+          <div style="background:#101014;border:1px solid #26262E;border-radius:18px;padding:16px">
+            <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px">
+              <div style="font-family:'Anton',sans-serif;font-size:18px;text-transform:uppercase">{{ p.autor }}</div>
+              <div style="font-family:'Barlow Condensed',sans-serif;font-size:14px;color:#FF2E88">{{ p.formacion }}</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:5px;margin-top:12px">
+              <sc-for list="{{ p.once }}" as="o" hint-placeholder-count="7">
+                <div style="display:flex;gap:10px;align-items:center;font-size:14px">
+                  <div style="width:78px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;{{ o.colStyle }}">{{ o.rol }}</div>
+                  <div style="flex:1;font-family:'Barlow Condensed',sans-serif;font-weight:600;text-transform:uppercase">{{ o.nombre }}</div>
+                  <div style="font-family:'Anton',sans-serif;color:#6D6D7A">{{ o.dorsal }}</div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;align-items:center">
+              <button onClick="{{ p.votarArriba }}" style="{{ p.upStyle }}">👍 {{ p.up }}</button>
+              <button onClick="{{ p.votarAbajo }}" style="{{ p.downStyle }}">👎 {{ p.down }}</button>
+              <sc-if value="{{ p.esMia }}"><div style="font-size:11px;color:#6D6D7A">Es la tuya</div></sc-if>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+              <sc-if value="{{ p.puedeUsar }}">
+                <button onClick="{{ p.usar }}" style="background:#2FA8A0;color:#0B0B0D;border:0;border-radius:10px;padding:8px 14px;font-weight:700;cursor:pointer">Usar esta</button>
+              </sc-if>
+              <sc-if value="{{ p.esMia }}">
+                <button onClick="{{ p.editar }}" style="background:transparent;border:1px solid #33333D;color:#C9C9D2;border-radius:10px;padding:8px 14px;cursor:pointer">Editar</button>
+              </sc-if>
+              <sc-if value="{{ p.puedeBorrar }}">
+                <button onClick="{{ p.borrar }}" style="background:transparent;border:1px solid #3A2430;color:#FF6FAC;border-radius:10px;padding:8px 14px;cursor:pointer">🗑</button>
+              </sc-if>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
     <sc-if value="{{ esBuzon }}">
       <div style="font-family:'Anton',sans-serif;font-size:clamp(22px,5vw,30px);text-transform:uppercase">📮 Buzón de sugerencias</div>
       <div style="font-size:14px;color:#8A8A96;margin-top:4px">Ideas para mejorar la app o el equipo. Las lee el míster.</div>
@@ -2355,8 +2509,13 @@
         <sc-if value="{{ subVisibilidad }}">
         <div style="max-width:520px;background:#101014;border:1px solid #26262E;border-radius:18px;padding:20px;margin-top:16px">
           <div style="font-family:'Anton',sans-serif;font-size:18px;text-transform:uppercase">👁 Qué ven los demás</div>
-          <div style="font-size:13px;color:#8A8A96;margin-top:4px">Tú lo ves todo siempre. Toca para mostrar u ocultar a jugadores y fans.</div>
+          <div style="font-size:13px;color:#8A8A96;margin-top:4px">Elige a quién configuras y toca cada opción para mostrarla u ocultarla. Tú lo ves todo siempre.</div>
           <div style="display:flex;flex-direction:column;gap:8px;margin-top:14px">
+            <div style="display:flex;gap:6px;background:#141419;border:1px solid #26262E;border-radius:999px;padding:4px;max-width:100%;overflow-x:auto;align-self:flex-start">
+              <sc-for list="{{ subVis }}" as="s" hint-placeholder-count="3">
+                <button onClick="{{ s.go }}" style="{{ s.style }}">{{ s.label }}</button>
+              </sc-for>
+            </div>
             <sc-for list="{{ interruptoresVis }}" as="v" hint-placeholder-count="8">
               <div style="display:flex;align-items:center;gap:10px;background:#16161C;border-radius:12px;padding:10px 12px;flex-wrap:wrap">
                 <div style="flex:1;min-width:150px">
@@ -2537,6 +2696,7 @@
           </div>
           <div style="text-align:center">
             <div style="{{ ficha.formaStyle }}">{{ ficha.forma }}</div>
+            <sc-if value="{{ ficha.hayDelta }}"><div style="font-size:11px;font-weight:700;{{ ficha.deltaStyle }}">antes {{ ficha.delta }}</div></sc-if>
             <div style="font-size:11px;color:#8A8A96;text-transform:uppercase;letter-spacing:.1em">Forma</div>
           </div>
           <sc-if value="{{ ficha.mostrarFans }}">
@@ -2879,6 +3039,20 @@
     </div>
   </sc-if>
 
+  <sc-if value="{{ haySinDeuda }}">
+    <div onClick="{{ cerrarSinDeuda }}" style="position:fixed;inset:0;background:rgba(4,4,6,.86);z-index:58;display:flex;align-items:center;justify-content:center;padding:20px">
+      <div style="background:#101014;border:1px solid #2FA8A0;border-radius:20px;max-width:380px;width:100%;padding:24px;text-align:center">
+        <div style="font-size:40px">✅</div>
+        <div style="font-family:'Anton',sans-serif;font-size:22px;text-transform:uppercase;margin-top:8px">{{ sinDeudaNombre }} está al día</div>
+        <div style="font-size:14px;color:#C9C9D2;margin-top:8px">No tiene deudas pendientes: ni cuotas ni multas.</div>
+        <div style="display:flex;gap:8px;margin-top:18px;flex-wrap:wrap">
+          <button onClick="{{ cerrarSinDeuda }}" style="flex:1;min-width:110px;background:#2FA8A0;color:#0B0B0D;border:0;border-radius:12px;padding:12px;font-weight:700;cursor:pointer">Vale</button>
+          <button onClick="{{ cobrarIgualmente }}" style="background:transparent;border:1px solid #33333D;color:#8A8A96;border-radius:12px;padding:12px 16px;cursor:pointer">Apuntar igualmente</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
   <sc-if value="{{ cobroAbierto }}">
     <div style="position:fixed;inset:0;background:rgba(4,4,6,.86);z-index:58;display:flex;align-items:center;justify-content:center;padding:20px">
       <div style="background:#101014;border:1px solid #33333D;border-radius:20px;max-width:400px;width:100%;padding:24px">
@@ -2892,7 +3066,10 @@
         </select>
         <div style="{{ labelStyle }}">Cuánto ha pagado (€)</div>
         <input value="{{ cobroImporte }}" onChange="{{ setCobroImporte }}" placeholder="Puede ser a plazos" style="{{ inputStyle }}"></input>
-        <div style="font-size:12px;color:#6D6D7A;margin-top:8px">Puedes apuntar varios pagos parciales del mismo concepto.</div>
+        <sc-if value="{{ hayMultasCobro }}">
+          <div style="font-size:12px;color:#F5C518;margin-top:8px">Multas sin pagar: {{ detalleMultasCobro }}</div>
+        </sc-if>
+        <div style="font-size:12px;color:#6D6D7A;margin-top:8px">Puedes apuntar varios pagos parciales del mismo concepto. Si eliges «Multas», se saldan las más antiguas con lo que pague.</div>
         <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">
           <button onClick="{{ guardarCobro }}" style="flex:1;min-width:120px;background:#FF2E88;color:#0B0B0D;border:0;border-radius:12px;padding:12px;font-weight:700;cursor:pointer">Apuntar</button>
           <button onClick="{{ cerrarCobro }}" style="background:transparent;border:1px solid #33333D;color:#8A8A96;border-radius:12px;padding:12px 18px;cursor:pointer">Cancelar</button>
@@ -3041,6 +3218,7 @@ const VISIBLE_POR_DEFECTO = {
   recuentoMvp: false,     // votos en vivo antes de cerrar el MVP
   liderMvp: false,        // «va ganando» antes de cerrar
   mediasNotas: false,     // media de notas de cada uno antes de cerrar
+  sugerenciaMinutos: false, // «quién necesita minutos» dentro de la convocatoria
   caja: true,             // multas y cuotas
   rotacion: true,         // minutos de cada uno
   clasificacion: true,
@@ -3053,10 +3231,24 @@ const ETIQUETAS_VIS = [
   ['mediasNotas',  'Medias de notas en vivo',       'La nota que lleva cada uno esa jornada'],
   ['caja',         'Multas y cuotas',               'La pestaña Caja entera'],
   ['rotacion',     'Minutos de cada jugador',       'La lista de rotación'],
+  ['sugerenciaMinutos','Quién necesita minutos',    'El aviso de rotación dentro de la convocatoria'],
   ['clasificacion','Clasificación de la liga',      ''],
   ['estadisticas', 'Estadísticas individuales',     '']
 ];
 
+// Pestañas que el míster puede quitar: para jugadores y fans, y de su propio menú.
+/** Valor de una opción para un grupo: primero la del grupo (j_/f_), luego la general. */
+function valorVis(v, pref, k) {
+  v = v || {};
+  let x = v[pref + k];
+  if (x === undefined) x = v[k];
+  if (x === undefined) x = VISIBLE_POR_DEFECTO[k];
+  return x !== false;
+}
+const TABS_OCULTABLES = [['feed','Feed'],['propuestas','Propuestas'],['convocatoria','Convocatoria'],['alineacion','Alineación'], ['propuestas','Propuestas'],['calendario','Calendario'],['acta','Actas'],['mvp','MVP'],['historia','Historia'],['tablon','Tablón'],['buzon','Buzón']];
+const TABS_OCULTABLES_MISTER = [['feed','Feed'],['carteles','Carteles'],['campos','Campos'],['caja','Caja'],['historia','Historia'],['tablon','Tablón'],['buzon','Buzón'],['instalar','Instalar']];
+TABS_OCULTABLES.forEach(([k, l]) => ETIQUETAS_VIS.push(['tab_' + k, 'Pestaña «' + l + '»', 'La quita de su menú; tú la sigues viendo']));
+TABS_OCULTABLES_MISTER.forEach(([k, l]) => ETIQUETAS_VIS.push(['mister_' + k, 'Pestaña «' + l + '»', 'La quita de tu menú de míster']));
 const COL_LIGA = { pj:'#C9C9D2', g:'#2FA8A0', e:'#8A8A96', p:'#E4404A', gf:'#FF2E88', gc:'#B06C4B' };
 const COL_STAT = { pj:'#C9C9D2', min:'#8B9DC3', goles:'#FF2E88', asis:'#2FA8A0', ta:'#F5C518', tr:'#E4404A', p0:'#F2841E', ge:'#B06C4B', nota:'#EDEDF2' };
 const MESES = { Enero:0, Febrero:1, Marzo:2, Abril:3, Mayo:4, Junio:5, Julio:6, Agosto:7, Septiembre:8, Octubre:9, Noviembre:10, Diciembre:11 };
@@ -3086,6 +3278,7 @@ const SQUAD = [
   { id:20, dorsal:'20', nombre:'Pablo',     pos:'BAN', edad:22, altura:180,  email:'pablofreireleaniz@gmail.com', pj:0,  min:0, goles:0, asis:0, ta:0, tr:0, p0:0, ge:0, nota:0, estado:'baja', foto:F+'fotos-1786457718361-36q1.png', recorte:F+'fotos-1786457718361-36q1.png', fans:0 },
   { id:21, dorsal:'21', nombre:'Anas',      pos:'DEF', edad:22, altura:178,  email:'javianastasioc@gmail.com', pj:0,  min:0, goles:0, asis:0, ta:0, tr:0, p0:0, ge:0, nota:0, estado:'alta', foto:F+'fotos-1786457766554-vyok.jpeg', recorte:'', fans:0 },
   { id:33, dorsal:'33', nombre:'Dungas',    pos:'POR', edad:24, altura:184, email:'diegobenitosc@gmail.com', pj:0,  min:0, goles:0, asis:0, ta:0, tr:0, p0:0, ge:0, nota:0, estado:'alta', foto:F+'fotos-1786457759351-sqvl.jpeg', recorte:F+'DungasFondo.png', fans:0 },
+  { id:100, dorsal:'26', nombre:'Tatary',    pos:'DEL', edad:21, altura:188, email:'albertotatarici10@gmail.com', pj:0,  min:0, goles:0, asis:0, ta:0, tr:0, p0:0, ge:0, nota:0, estado:'nuevo', foto:F+'Tatary.png', recorte:F+'Tatary.png', fans:0 },
   { id:69, dorsal:'93', nombre:'Casado',    pos:'DEF', edad:22, altura:178, email:'alexcasado04@gmail.com', pj:0,  min:0, goles:0, asis:0, ta:0, tr:0, p0:0, ge:0, nota:0, estado:'capitan', foto:F+'fotos-1786457724229-rh65.png', recorte:F+'fotos-1786457724229-rh65.png', fans:0 },
   { id:79, dorsal:'79', nombre:'Melgosa',   pos:'BAN', edad:20, altura:175, email:'mario.melgosadelrio@gmail.com', pj:0,  min:0, goles:0, asis:0, ta:0, tr:0, p0:0, ge:0, nota:0, estado:'alta', foto:F+'fotos-1786457765582-oio6.jpeg', recorte:'', fans:0 },
   { id:99, dorsal:'12', nombre:'Moski',    pos:'DEF', edad:22, altura:176, email:'eduardohorcajadagarcia@gmail.com', pj:0,  min:0, goles:0, asis:0, ta:0, tr:0, p0:0, ge:0, nota:0,   estado:'nuevo', foto:F+'pasted-1786622948443-0.png', recorte:F+'pasted-1786622948443-0.png', fans:0 }
@@ -3191,8 +3384,47 @@ const TIPOS_CARTEL = [
 // 'todos', 'jugador', 'fan' o 'mister'.
 // Versión X.Y.Z: X cambios muy grandes, Y funcionalidades nuevas,
 // Z arreglos y retoques pequeños.
-const APP_VERSION = '1.2.0';
+const APP_VERSION = '1.5.0';
 const NOVEDADES = [
+  { version:'1.5.0', fecha:'17 nov 2026', items:[
+    { para:'todos',  texto:'Nueva pestaña «Propuestas»: cada jugador y cada fan puede proponer su once para la jornada, ver el de los demás y votarlo con 👍 o 👎. Las propuestas se ordenan por votos.' },
+    { para:'mister', texto:'En «Propuestas» ves todas, las votadas arriba, y con «Usar esta» cargas una como tu once para retocarla y publicarla. Puedes borrar cualquiera y ocultar la pestaña desde Mi cuenta → Visibilidad.' }
+  ] },
+  { version:'1.4.0', fecha:'17 nov 2026', items:[
+    { para:'todos',   texto:'La forma se calcula con tus últimos 3 partidos (65 %) y tu trayectoria de toda la temporada (35 %). Quien no juega no pierde forma. Los porteros tienen su propia fórmula, con goles encajados y porterías a cero.' },
+    { para:'todos',   texto:'En tu ficha, junto a la forma, sale cómo estabas antes de la última jornada y cuánto has subido o bajado.' },
+    { para:'todos',   texto:'Clasificación: nuevo botón «Ver resultados de todas las jornadas», con escudos y filtros por jornada o por equipo. Los partidos no presentados salen marcados.' },
+    { para:'todos',   texto:'Los equipos que no se presentan pierden 3-0 y se les restan 3 puntos en la clasificación.' },
+    { para:'todos',   texto:'El calendario oficial trae ya las horas y los campos de las 26 jornadas, y los escudos de los 14 equipos.' },
+    { para:'todos',   texto:'En el acta, cada gol puede llevar su asistente. Los goles en propia ya no cuentan como gol de ningún jugador, ni para estadísticas ni para puntos.' },
+    { para:'todos',   texto:'Los goles encajados se reparten por portero y la portería a cero solo cuenta si jugó al menos media parte.' },
+    { para:'todos',   texto:'Feed: puedes editar o borrar tus comentarios y dar 👍 a los de los demás. Cada cuenta solo puede reaccionar una vez a cada publicación.' },
+    { para:'todos',   texto:'Buzón: ya se pueden votar las sugerencias con 👍 o 👎.' },
+    { para:'todos',   texto:'Las tablas avisan de que se pueden deslizar y los filtros de estadísticas ya no se cortan en el móvil.' },
+    { para:'todos',   texto:'Arreglado el registro de los móviles para las notificaciones: ahora los avisos llegan a jugadores y fans.' },
+    { para:'jugador', texto:'Solo votan el MVP y ponen notas los que jugaron, más los que el míster autorice. Nadie puede votarse ni puntuarse a sí mismo.' },
+    { para:'jugador', texto:'Si llegas de última hora, el míster puede añadirte al acta: cuentas en las estadísticas y puedes votar el MVP.' },
+    { para:'fan',     texto:'Los votos y las medias del MVP quedan ocultos hasta que el míster cierra la votación.' },
+    { para:'mister',  texto:'Mi cuenta → Visibilidad: ahora tiene tres apartados, Jugadores, Fans y Míster. Cada uno con sus opciones, incluidas las pestañas que quieres quitar.' },
+    { para:'mister',  texto:'Nueva opción para ocultar «Quién necesita minutos» en la convocatoria. Por defecto está oculta para jugadores y fans.' },
+    { para:'mister',  texto:'MVP → Control: arriba ves cuántos han votado y cuántos han puesto notas, y quién falta. Puedes anular votos y notas sin que el jugador lo note.' },
+    { para:'mister',  texto:'Acta: añade a los jugadores que vinieron de última hora; quedan marcados.' },
+    { para:'mister',  texto:'Caja: si un jugador tiene multas, aparece el concepto «Multas», que las salda por orden. Si ya está al día, te avisa de que no debe nada.' },
+    { para:'mister',  texto:'Meter resultados trae nuestro resultado del acta y los 7 partidos de la jornada con el calendario oficial.' },
+    { para:'mister',  texto:'Al guardar fallos de conexión, la app reintenta sola y solo te avisa si sigue sin red.' }
+  ] },
+  { version:'1.3.1', fecha:'17 nov 2026', items:[
+    { para:'mister', texto:'Caja → + Cobro: si el jugador tiene multas sin pagar aparece el concepto «Multas», que salda las más antiguas con lo que pague.' }
+  ] },
+  { version:'1.3.0', fecha:'17 nov 2026', items:[
+    { para:'todos',   texto:'La forma ahora mide tus últimos 3 partidos y no toda la temporada, así que sube y baja jornada a jornada. Los porteros tienen su propia fórmula, basada en goles encajados y porterías a cero.' },
+    { para:'todos',   texto:'Clasificación: nuevo botón para ver los resultados de todas las jornadas, filtrando por jornada o por equipo.' },
+    { para:'todos',   texto:'Las tablas avisan de que se pueden deslizar y los filtros de estadísticas ya no se cortan en el móvil.' },
+    { para:'jugador', texto:'Si llegas de última hora, el míster puede añadirte al acta: cuentas en las estadísticas y puedes votar el MVP.' },
+    { para:'mister',  texto:'Acta: puedes añadir jugadores que vinieron de última hora; quedan marcados como «última hora».' },
+    { para:'mister',  texto:'Mi cuenta → Visibilidad: ahora puedes quitar pestañas enteras a jugadores y fans, y también de tu propio menú.' },
+    { para:'mister',  texto:'Meter resultados trae ya nuestro resultado del acta puesto.' }
+  ] },
   { version:'1.2.0', fecha:'28 sep 2026', items:[
     { para:'todos',   texto:'Ya puedes editar ✎ o borrar 🗑 tus propios comentarios del feed.' },
     { para:'todos',   texto:'Dale ♥ a los comentarios que más te gusten.' },
@@ -3248,13 +3480,13 @@ function novedadesPara(rol, soloDesde) {
 }
 
 const TABS = [
-  ['panel','Panel'], ['feed','Feed'], ['convocatoria','Convocatoria'], ['alineacion','Alineación'],
+  ['panel','Panel'], ['feed','Feed'], ['convocatoria','Convocatoria'], ['alineacion','Alineación'], ['propuestas','Propuestas'],
   ['plantilla','Plantilla'], ['calendario','Calendario'], ['acta','Actas'], ['stats','Estadísticas'],
   ['liga','Clasificación'], ['mvp','MVP'], ['carteles','Carteles'], ['campos','Campos'],
   ['tablon','Tablón'], ['caja','Caja'], ['historia','Historia'], ['buzon','Buzón'], ['instalar','Instalar'], ['cuenta','Mi cuenta']
 ];
-const TABS_JUGADOR = ['panel','feed','convocatoria','alineacion','plantilla','calendario','acta','stats','liga','mvp','tablon','caja','historia','buzon','instalar','cuenta'];
-const TABS_FAN = ['panel','feed','plantilla','convocatoria','alineacion','calendario','stats','liga','mvp','historia','buzon','instalar','cuenta'];
+const TABS_JUGADOR = ['panel','feed','convocatoria','alineacion','propuestas','plantilla','calendario','acta','stats','liga','mvp','tablon','caja','historia','buzon','instalar','cuenta'];
+const TABS_FAN = ['panel','feed','plantilla','convocatoria','alineacion','propuestas','calendario','stats','liga','mvp','historia','buzon','instalar','cuenta'];
 
 const ORDEN = [['goles','⚽ Goles'],['asis','🅰️ Asist.'],['min','⏱️ Minutos'],['nota','⭐ Nota'],['pj','📋 Partidos'],['forma','📈 Forma']];
 const NUMERICOS = [['pj','📋 Partidos'],['min','⏱️ Minutos'],['goles','⚽ Goles'],['asis','🅰️ Asistencias'],['ta','🟨 Amarillas'],['tr','🟥 Rojas'],['p0','🧤 Port. a 0'],['ge','🥅 Encajados'],['nota','⭐ Nota']];
@@ -3509,7 +3741,7 @@ class Component extends DCLogic {
     convPorJornada:{}, aliPorJornada:{}, jornadaSel:null, respondido:{}, popup:false,
     clasificacion:CLASIFICACION, avisoGuardado:'', demo:false, multas:[], pagos:[], visibilidad:VISIBLE_POR_DEFECTO,
     temporadas:[], deshacer:null, avisoSilencio:null, envioSilencio:null, confirmarCero:false, confirmarCierre:false,
-    historicoLiga:[], jornadaFoto:null, quiniela:null, resultadosLiga:{},
+    historicoLiga:[], jornadaFoto:null, quiniela:null, resultadosLiga:{}, ultimaHoraSel:null, propuestas:[], votosPropuesta:[], propBorrador:{ formacion:'1-2-3-1', once:{} }, propGrupo:'jugador', sinDeuda:null, visSub:'jugador', verResultadosLiga:false, resJornada:'todas', resEquipo:'todos',
     escudoAbierto:false, uso:null, usoCargando:false, usoAviso:'', fotosEquipacion:{},
     contadores:null, confeti:[], celebracion:null, arrastrando:null, vistaCampo:'2d', tabAnim:0, anuncio:null, jornadaHist:null, nombreTemporada:'', altaEmail:'', altaJugador:null, altaAviso:'', sugerencias:[], textoSugerencia:'', graciasSugerencia:false,
     mensajeGrupo:'', copiadoGrupo:false, resultadoAviso:'', confirmarBorrado:null,
@@ -3636,7 +3868,24 @@ class Component extends DCLogic {
     });
   }
 
-  componentDidUpdate() { this.persistir(); }
+  componentDidUpdate() {
+    this.persistir();
+    if (this.state.tab === 'propuestas' && !this._propCargadas && this.bk && this.state.loggedIn) { this._propCargadas = true; this.cargarPropuestas(); }
+  }
+
+  async cargarPropuestas() {
+    if (!this.bk || !this.bk.listarPropuestas) return;
+    const r = await this.bk.listarPropuestas();
+    if (r && r.ok) this.setState({ propuestas: r.propuestas, votosPropuesta: r.votos });
+    else if (r && r.error) this.setState({ avisoGuardado: 'No se pudieron cargar las propuestas: ' + r.error + ' (¿has creado las tablas? ver SUPABASE.md)' });
+  }
+
+  async votarProp(id, valor) {
+    const r = await this.bk.votarPropuesta(id, valor);
+    if (!r.ok) { this.setState({ avisoGuardado: 'No se pudo votar: ' + r.error }); return; }
+    this.setState(s => ({ votosPropuesta: (s.votosPropuesta || []).filter(v => !(v.propuesta_id === id && v.votante === s.perfilId))
+      .concat(valor ? [{ propuesta_id:id, votante:s.perfilId, valor }] : []) }));
+  }
 
   /** Guarda ya, sin esperar el medio segundo de margen. Para acciones
    *  puntuales (como marcar un favorito) que se pierden si el usuario
@@ -3766,8 +4015,7 @@ class Component extends DCLogic {
     // de verdad verán ellos, no lo que ve el míster.
     const vista = s.rol === 'mister' ? (s.verComo || 'mister') : s.rol;
     if (vista === 'mister') return true;
-    const v = s.visibilidad || VISIBLE_POR_DEFECTO;
-    return v[clave] !== false;
+    return valorVis(s.visibilidad || VISIBLE_POR_DEFECTO, vista === 'fan' ? 'f_' : 'j_', clave);
   }
   /** Números grandes que cuentan desde cero al entrar. */
   arrancarContadores(objetivos) {
@@ -3903,7 +4151,15 @@ class Component extends DCLogic {
   quinielaDe(j, tabla) {
     const NOS = this.nombreNuestro();
     const guardada = (this.state.resultadosLiga || {})[j];
-    if (!guardada || !guardada.length) return { jornada:j, marcadores:{}, otros: this.otrosDeJornada(j, tabla), editando:false };
+    if (!guardada || !guardada.length) {
+      // Si ya hay acta de esa jornada, nuestro resultado sale puesto solo.
+      const acta = (this.state.actas || []).find(a => a.jornada === j);
+      const par = (this.state.partidos || []).find(p => p.num === j);
+      const marcadores = acta && par
+        ? { nuestro: { l: String(par.casa ? acta.gf : acta.gc), v: String(par.casa ? acta.gc : acta.gf), np:'' } }
+        : {};
+      return { jornada:j, marcadores, otros: this.otrosDeJornada(j, tabla), editando:false };
+    }
     const nuestro = guardada.find(e => e.local === NOS || e.visita === NOS);
     const otros = guardada.filter(e => e !== nuestro).map(e => ({ local:e.local, visitante:e.visita, gl:String(e.gl), gv:String(e.gv), np:e.np || '' }));
     return {
@@ -4028,6 +4284,19 @@ class Component extends DCLogic {
     window.addEventListener('touchend', soltar);
   }
 
+  /** Jugador que apareció sin estar convocado: entra en el acta, cuenta para
+   *  estadísticas y puede votar y ser votado en el MVP. */
+  anadirUltimaHora(actaId) {
+    const jid = this.state.ultimaHoraSel;
+    if (!jid) return;
+    const a = (this.state.actas || []).find(x => x.id === actaId);
+    if (!a || (a.minutos || []).some(m => m.id === jid)) return;
+    const min = Math.max(5, Math.min(50, Math.round(350 / ((a.minutos || []).length + 1))));
+    this.patchActa(actaId, { minutos: (a.minutos || []).concat([{ id:jid, min, nota:0, ultimaHora:true }]) });
+    this.setEstado(a.jornada, jid, 'si');
+    this.setState({ ultimaHoraSel:null, avisoGuardado:'Añadido al acta como jugador de última hora. Ajusta sus minutos.' });
+  }
+
   setAli(num, patch) {
     this.setState(s => {
       const m = Object.assign({}, s.aliPorJornada);
@@ -4089,20 +4358,48 @@ class Component extends DCLogic {
 
   /** Índice de rendimiento 0-100: nota, participación en goles,
    *  minutos jugados y votos de MVP. */
-  rendimiento(j, votos) {
-    if (!j.pj) return 0;
-    const nota = Math.min(1, (j.nota || 0) / 10);
-    // Porteros: su «participación» es la portería. Menos goles encajados por
-    // partido y más porterías a cero = más puntos. 0 encajados de media → 1;
-    // 5 o más de media → 0. Las porterías a cero suman un extra.
-    const partic = j.pos === 'POR'
-      ? Math.min(1, Math.max(0, 1 - ((j.ge || 0) / j.pj) / 5) * 0.75 + ((j.p0 || 0) / j.pj) * 0.5)
-      : Math.min(1, ((j.goles + j.asis) / j.pj) / 1.2);
-    const minutos = Math.min(1, (j.min / j.pj) / 50);
-    const mvp = Math.min(1, (votos || 0) / 3);
-    const disciplina = Math.max(0, 1 - (j.ta * 0.05 + j.tr * 0.2));
-    const bruto = nota * 0.40 + partic * 0.28 + minutos * 0.14 + mvp * 0.10 + disciplina * 0.08;
-    return Math.round(bruto * 100);
+  rendimiento(j, votos, hasta) {
+    // Forma = tus ÚLTIMOS 3 partidos (el último pesa más), no toda la temporada.
+    const actas = [...(this.state.actas || [])].filter(a => !hasta || a.jornada <= hasta).sort((a, b) => b.jornada - a.jornada);
+    const juegos = [];
+    for (const a of actas) {
+      const m = (a.minutos || []).find(x => x.id === j.id);
+      if (m && m.min > 0) juegos.push({ a, m });
+    }
+    if (!juegos.length) return 0;
+    const esc = s => String(s).replace(/[.*+?^()|\[\]\\{}$]/g, '\\$&');
+    const BASE = { DEF:.35, BAN:.25, MC:.15, DEL:0 };
+    const pesos = [.5, .3, .2].slice(0, Math.min(3, juegos.length));
+    const puntos = [];
+    const suma = pesos.reduce((s, x) => s + x, 0);
+    let total = 0;
+    juegos.forEach(({ a, m }, i) => {
+      const ev = a.eventos || [];
+      const mio = ev.filter(e => e.jugador === j.nombre);
+      const goles = mio.filter(e => /gol/i.test(e.detalle) && !/propia/i.test(e.detalle)).length;
+      const asis = ev.filter(e => new RegExp('asist\\.?\\s*' + esc(j.nombre), 'i').test(e.detalle)).length;
+      const ta = mio.filter(e => /amarilla/i.test(e.detalle)).length;
+      const tr = mio.filter(e => /roja/i.test(e.detalle)).length;
+      const pp = mio.filter(e => /propia nuestro/i.test(e.detalle)).length;
+      const nota = m.nota > 0 ? Math.min(1, m.nota / 10) : 0.65;
+      let partic;
+      if (j.pos === 'POR') {
+        const r = encajadosPorPortero(a, this.state.jugadores)[j.id] || { ge: a.gc || 0, p0: false };
+        partic = Math.min(1, Math.max(0, 1 - r.ge / 5) + (r.p0 ? .2 : 0));
+      } else {
+        partic = Math.min(1, (BASE[j.pos] || 0) + goles * .5 + asis * .35);
+      }
+      const minutos = Math.min(1, m.min / 35);
+      const mvp = a.mvp_id === j.id ? 1 : 0;
+      const disc = Math.max(0, 1 - (ta * .1 + tr * .35 + pp * .15));
+      const sc = nota * .40 + partic * .28 + minutos * .14 + mvp * .10 + disc * .08;
+      puntos.push(sc);
+      if (i < 3) total += sc * pesos[i];
+    });
+    // Forma = 65 % últimos 3 partidos + 35 % trayectoria de toda la temporada.
+    // Quien no juega no pierde forma: solo cuentan los partidos jugados.
+    const rec = total / suma, temp = puntos.reduce((s, x) => s + x, 0) / puntos.length;
+    return Math.round((juegos.length > 3 ? rec * 0.65 + temp * 0.35 : rec) * 100);
   }
 
   async cargarDemo() {
@@ -4431,8 +4728,7 @@ class Component extends DCLogic {
     const valorDe = (p, acc) => {
       if (clave !== 'forma') return acc ? (acc[clave] || 0) : (p[clave] || 0);
       if (!acc) return this.rendimiento(p, votosPorJugador[p.id]);
-      if (!acc.pj) return 0;
-      return this.rendimiento(Object.assign({}, p, acc), votosPorJugador[p.id]);
+      return this.rendimiento(p, votosPorJugador[p.id], previas.length ? previas[previas.length - 1].jornada : 0);
     };
     const rankAhora = {};
     [...JUG].sort((a, b) => valorDe(b) - valorDe(a)).forEach((p, i) => { rankAhora[p.id] = i + 1; });
@@ -4573,6 +4869,10 @@ class Component extends DCLogic {
     const dRival = partidoRival ? this.dificultad(partidoRival.rival) : null;
 
     const tabsPermitidas = admin ? TABS.map(t => t[0]) : esJugador ? TABS_JUGADOR : TABS_FAN;
+    const vistaEf = st.rol === 'mister' ? (st.verComo || 'mister') : st.rol;
+    const visCfg = st.visibilidad || VISIBLE_POR_DEFECTO;
+    const tabOculta = (k) => k === 'panel' || k === 'cuenta' ? false
+      : (vistaEf === 'mister' ? visCfg['mister_' + k] === false : !valorVis(visCfg, vistaEf === 'fan' ? 'f_' : 'j_', 'tab_' + k));
 
     return {
       esLogin: !st.loggedIn, esApp: st.loggedIn,
@@ -4650,7 +4950,7 @@ class Component extends DCLogic {
       novedadesTodas: novedadesPara(st.rol),
       claveAnim: st.tab + '-' + st.tabAnim,
       estiloPantalla: 'animation:psfcEntra .42s cubic-bezier(.22,.9,.25,1) both',
-      tabs: TABS.filter(([k]) => tabsPermitidas.indexOf(k) !== -1
+      tabs: TABS.filter(([k]) => tabsPermitidas.indexOf(k) !== -1 && !tabOculta(k)
           && (k !== 'caja' || this.visible('caja'))
           && (k !== 'stats' || this.visible('estadisticas'))
           && (k !== 'liga' || this.visible('clasificacion'))).map(([k, label]) => ({ label, style:this.tabBtn(st.tab === k), go:() => this.setState({ tab:k, tabAnim: st.tabAnim + 1 }) })),
@@ -4658,7 +4958,7 @@ class Component extends DCLogic {
       esPanel:st.tab === 'panel', esFeed:st.tab === 'feed', esPlantilla:st.tab === 'plantilla',
       esConvocatoria:st.tab === 'convocatoria', esAlineacion:st.tab === 'alineacion', esCalendario:st.tab === 'calendario',
       esActa:st.tab === 'acta' && !esFan, esStats:st.tab === 'stats' && this.visible('estadisticas'), esLiga:st.tab === 'liga' && this.visible('clasificacion'), esMvp:st.tab === 'mvp',
-      esBuzon:st.tab === 'buzon', puedeSugerir: !admin, esHistoria: st.tab === 'historia',
+      esPropuestas: st.tab === 'propuestas', esBuzon:st.tab === 'buzon', puedeSugerir: !admin, esHistoria: st.tab === 'historia',
       puedeResponder: !esFan && miFicha !== null,
       sinFichaVinculada: !esFan && miFicha === null,
       noConvocadoVoto: !esFan && !admin && miFicha !== null && !!jornadaViva && !mvpCerrado && !puedoVotar,
@@ -4969,14 +5269,118 @@ class Component extends DCLogic {
       textoDeshacer: st.deshacer ? 'Deshacer ' + st.deshacer.que : '',
       deshacer: () => this.deshacerUltimo(),
       descartarDeshacer: () => this.setState({ deshacer:null }),
-      interruptoresVis: ETIQUETAS_VIS.map(([k, label, nota]) => {
-        const on = (st.visibilidad || VISIBLE_POR_DEFECTO)[k] !== false;
-        return {
-          label, nota, estado: on ? 'Lo ven' : 'Oculto',
-          estadoStyle: this.pill(on ? '#2FA8A022' : '#1C1C22', on ? '#2FA8A0' : '#8A8A96', on ? '#2FA8A0' : '#33333D') + ';cursor:pointer',
-          go: () => this.setState(s => ({ visibilidad: Object.assign({}, s.visibilidad || VISIBLE_POR_DEFECTO, { [k]: !on }) }))
-        };
-      }),
+      // ---- Última hora en el acta ----
+      hayUltimaHora: !!acta && !(st.actaCerrada),
+      ultimaHoraSel: st.ultimaHoraSel || '',
+      setUltimaHoraSel: e => this.setState({ ultimaHoraSel: e.target.value ? parseInt(e.target.value, 10) : null }),
+      opcionesUltimaHora: [{ v:'', label:'Elige un jugador' }].concat(acta ? porDorsal(JUG.filter(j => j.estado !== 'baja' && !(acta.minutos || []).some(m => m.id === j.id))).map(j => ({ v:j.id, label:j.dorsal + ' · ' + j.nombre })) : []),
+      anadirUltimaHora: () => { if (acta) this.anadirUltimaHora(acta.id); },
+
+      // ---- Resultados de todas las jornadas ----
+      verResultadosLiga: !!st.verResultadosLiga,
+      alternarResultados: () => this.setState(s => ({ verResultadosLiga: !s.verResultadosLiga })),
+      textoBotonResultados: st.verResultadosLiga ? '▲ Ocultar resultados' : '📋 Ver resultados de todas las jornadas',
+      resJornada: st.resJornada || 'todas',
+      setResJornada: e => this.setState({ resJornada: e.target.value }),
+      resEquipo: st.resEquipo || 'todos',
+      setResEquipo: e => this.setState({ resEquipo: e.target.value }),
+      opcionesResJornada: [{ v:'todas', label:'Todas las jornadas' }].concat(Object.keys(st.resultadosLiga || {}).map(Number).filter(n => (st.resultadosLiga[n] || []).length).sort((a, b) => b - a).map(n => ({ v:String(n), label:'Jornada ' + n }))),
+      opcionesResEquipo: [{ v:'todos', label:'Todos los equipos' }].concat(TABLA_LIGA.map(e => e.nombre).sort().map(n => ({ v:n, label:n }))),
+      resultadosFiltrados: (() => {
+        const NOS = this.nombreNuestro();
+        const fj = st.resJornada || 'todas', fe = st.resEquipo || 'todos';
+        const colorDe = n => (TABLA_LIGA.find(x => x.nombre === n) || {}).color || '#6D6D7A';
+        return Object.keys(st.resultadosLiga || {}).map(Number).filter(n => (st.resultadosLiga[n] || []).length && (fj === 'todas' || String(n) === fj))
+          .sort((a, b) => b - a).map(n => ({
+            jornada: n,
+            partidos: st.resultadosLiga[n].filter(e => fe === 'todos' || e.local === fe || e.visita === fe).map(e => {
+              const nuestro = e.local === NOS || e.visita === NOS;
+              return { local:e.local, visita:e.visita, marcador:e.gl + ' - ' + e.gv, np: e.np || '',
+                localBadge: this.badgeEquipo(e.local, colorDe(e.local), 28), localSigla: this.siglaSiNoHayEscudo(e.local, siglaEquipo(e.local, TABLA_LIGA.map(x => x.nombre))),
+                visitaBadge: this.badgeEquipo(e.visita, colorDe(e.visita), 28), visitaSigla: this.siglaSiNoHayEscudo(e.visita, siglaEquipo(e.visita, TABLA_LIGA.map(x => x.nombre))),
+                rowStyle:'position:relative;display:flex;align-items:center;gap:10px;border-radius:10px;padding:8px 10px;background:' + (nuestro ? 'rgba(255,46,136,.12)' : '#16161C') };
+            })
+          })).filter(j => j.partidos.length);
+      })(),
+      sinResultadosLiga: !Object.keys(st.resultadosLiga || {}).some(n => (st.resultadosLiga[n] || []).length),
+
+      // ---- Propuestas de alineación ----
+      propJornadaTexto: partidoSel ? 'Jornada ' + jornadaSel + ' · ' + partidoSel.rival : 'Sin jornada',
+      puedeProponer: !admin && !!st.perfilId,
+      formacionesProp: Object.keys(FORMACIONES).map(fm => ({ label:fm, style:this.tabBtn((st.propBorrador || {}).formacion === fm),
+        go:() => this.setState({ propBorrador:{ formacion:fm, once:{} } }) })),
+      slotsProp: (() => {
+        const bor = st.propBorrador || { formacion:'1-2-3-1', once:{} };
+        const base = conv.length ? conv : activos;
+        return (FORMACIONES[bor.formacion] || FORMACIONES['1-2-3-1']).map((s, i) => {
+          const usados = Object.keys(bor.once).filter(k => Number(k) !== i).map(k => bor.once[k]);
+          return { rol: POS[s.rol] || s.rol, rolStyle:'width:78px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:' + (POS_COLOR[s.rol] || '#8A8A96'),
+            valor: bor.once[i] || '',
+            opciones: [{ v:'', label:'Elige…' }].concat(porDorsal(base.filter(p => usados.indexOf(p.id) === -1)).map(p => ({ v:p.id, label:p.dorsal + ' · ' + p.nombre }))),
+            set: e => { const v = e.target.value ? parseInt(e.target.value, 10) : null;
+              this.setState(s2 => { const o = Object.assign({}, s2.propBorrador.once); if (v) o[i] = v; else delete o[i]; return { propBorrador: Object.assign({}, s2.propBorrador, { once:o }) }; }); } };
+        });
+      })(),
+      textoBaseProp: conv.length ? 'Puedes elegir entre los ' + conv.length + ' convocados.' : 'Todavía no hay convocatoria cerrada: puedes elegir entre toda la plantilla.',
+      enviarPropuesta: async () => {
+        const bor = st.propBorrador || { formacion:'1-2-3-1', once:{} };
+        if (Object.keys(bor.once).length < 7) { this.setState({ avisoGuardado:'Completa los 7 puestos antes de enviar.' }); return; }
+        const r = await this.bk.guardarPropuesta(jornadaSel, bor.formacion, bor.once);
+        if (!r.ok) { this.setState({ avisoGuardado:'No se pudo enviar: ' + r.error }); return; }
+        await this.cargarPropuestas();
+        this.setState({ avisoGuardado:'Propuesta enviada. Puedes cambiarla cuando quieras antes de que el míster publique la alineación.' });
+      },
+      actualizarPropuestas: () => this.cargarPropuestas(),
+      gruposProp: (() => {
+        const lista = (st.propuestas || []).filter(p => p.jornada === jornadaSel);
+        return [['jugador','👟 Jugadores'],['fan','🎟 Fans']].map(([k, l]) => ({
+          label: l + ' (' + lista.filter(p => p.rol === k).length + ')',
+          style: this.tabBtn((st.propGrupo || 'jugador') === k), go: () => this.setState({ propGrupo:k }) }));
+      })(),
+      propuestasLista: (() => {
+        const grupo = st.propGrupo || 'jugador';
+        return (st.propuestas || []).filter(p => p.jornada === jornadaSel && p.rol === grupo).map(p => {
+          const vs = (st.votosPropuesta || []).filter(v => v.propuesta_id === p.id);
+          const up = vs.filter(v => v.valor === 1).length, down = vs.filter(v => v.valor === -1).length;
+          const mio = vs.find(v => v.votante === st.perfilId);
+          const esMia = p.perfil_id === st.perfilId;
+          const btn = (on, col) => 'border-radius:999px;padding:7px 14px;font-weight:700;font-size:14px;cursor:' + (esMia ? 'default' : 'pointer') + ';border:1px solid ' + (on ? col : '#33333D') + ';background:' + (on ? col + '33' : 'transparent') + ';color:' + (on ? col : '#C9C9D2');
+          return {
+            autor:p.autor, formacion:p.formacion, up, down, score:up - down, esMia, puedeVotar:!esMia,
+            puedeBorrar: admin || esMia, puedeUsar: admin,
+            upStyle: btn(mio && mio.valor === 1, '#2FA8A0'), downStyle: btn(mio && mio.valor === -1, '#E4404A'),
+            once: (FORMACIONES[p.formacion] || FORMACIONES['1-2-3-1']).map((s, i) => {
+              const j = JUG.find(x => x.id === (p.once || {})[i]);
+              return { rol: POS[s.rol] || s.rol, nombre: j ? j.nombre : '—', dorsal: j ? j.dorsal : '', colStyle:'color:' + (POS_COLOR[s.rol] || '#8A8A96') };
+            }),
+            votarArriba: () => { if (!esMia) this.votarProp(p.id, mio && mio.valor === 1 ? 0 : 1); },
+            votarAbajo: () => { if (!esMia) this.votarProp(p.id, mio && mio.valor === -1 ? 0 : -1); },
+            editar: () => this.setState({ propBorrador:{ formacion:p.formacion, once:Object.assign({}, p.once || {}) } }),
+            usar: () => { this.setAli(jornadaSel, { formacion:p.formacion, once:Object.assign({}, p.once || {}), posiciones:{} });
+              this.setState({ tab:'alineacion', avisoGuardado:'Propuesta de ' + p.autor + ' cargada como tu once. Retócala y publícala.' }); },
+            borrar: async () => { const r = await this.bk.borrarPropuesta(p.id);
+              if (!r.ok) { this.setState({ avisoGuardado:'No se pudo borrar: ' + r.error }); return; }
+              this.setState(s => ({ propuestas: (s.propuestas || []).filter(x => x.id !== p.id) })); }
+          };
+        }).sort((a, c) => c.score - a.score);
+      })(),
+      sinPropuestas: !(st.propuestas || []).some(p => p.jornada === jornadaSel && p.rol === (st.propGrupo || 'jugador')),
+
+      subVis: [['jugador','👟 Jugadores'],['fan','🎟 Fans'],['mister','🧢 Míster']].map(([k, l]) => ({ label:l, style:this.tabBtn((st.visSub || 'jugador') === k), go:() => this.setState({ visSub:k }) })),
+      interruptoresVis: (() => {
+        const sub = st.visSub || 'jugador';
+        const pref = sub === 'fan' ? 'f_' : 'j_';
+        const cfg = st.visibilidad || VISIBLE_POR_DEFECTO;
+        return ETIQUETAS_VIS.filter(([k]) => sub === 'mister' ? k.indexOf('mister_') === 0 : k.indexOf('mister_') !== 0).map(([k, label, nota]) => {
+          const clave = sub === 'mister' ? k : pref + k;
+          const on = sub === 'mister' ? cfg[k] !== false : valorVis(cfg, pref, k);
+          return {
+            label, nota, estado: on ? (sub === 'mister' ? 'En tu menú' : 'Lo ven') : 'Oculto',
+            estadoStyle: this.pill(on ? '#2FA8A022' : '#1C1C22', on ? '#2FA8A0' : '#8A8A96', on ? '#2FA8A0' : '#33333D') + ';cursor:pointer',
+            go: () => this.setState(s => ({ visibilidad: Object.assign({}, s.visibilidad || VISIBLE_POR_DEFECTO, { [clave]: !on }) }))
+          };
+        });
+      })(),
 
       puedePublicarJornada: admin && st.partidos.length > 0,
       puedePublicarActa: admin && st.actas.length > 0,
@@ -5431,6 +5835,15 @@ class Component extends DCLogic {
           posStyle: 'display:inline-block;margin-top:6px;font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:12px;letter-spacing:.1em;text-transform:uppercase;padding:4px 10px;border-radius:999px;background:' + POS_COLOR[p.pos] + '22;color:' + POS_COLOR[p.pos] + ';border:1px solid ' + POS_COLOR[p.pos],
           fisico: (p.edad ? ' · ' + p.edad + ' años' : '') + (p.altura ? ' · ' + p.altura + ' cm' : ''),
           forma: this.rendimiento(p, votosPorJugador[p.id]) || '—',
+          ...(() => {
+            const hasta = previas.length ? previas[previas.length - 1].jornada : 0;
+            const antes = hasta ? this.rendimiento(p, votosPorJugador[p.id], hasta) : 0;
+            const ahora = this.rendimiento(p, votosPorJugador[p.id]);
+            if (!antes || !ahora) return { hayDelta:false, delta:'', deltaStyle:'' };
+            const d = ahora - antes;
+            return { hayDelta:true, delta: antes + ' ' + (d >= 0 ? '▲ +' : '▼ ') + d,
+              deltaStyle: 'color:' + (d > 0 ? '#2FA8A0' : d < 0 ? '#E4404A' : '#8A8A96') };
+          })(),
           formaStyle: (() => { const v = this.rendimiento(p, votosPorJugador[p.id]);
             const col = v >= 75 ? '#2FA8A0' : v >= 50 ? '#F5C518' : v > 0 ? '#E4572E' : '#5A5A66';
             return 'font-family:Anton,sans-serif;font-size:30px;color:' + col; })(),
@@ -5742,7 +6155,7 @@ class Component extends DCLogic {
           const esPortero = p.pos === 'POR';
           const reparto = esPortero ? (encajadosPorPortero(acta, JUG)[p.id] || { ge:0 }) : null;
           const apuntado = m.ge !== undefined && m.ge !== null && m.ge !== '';
-          return { nombre:p.nombre, min:m.min, nota:m.nota,
+          return { nombre:p.nombre, min:m.min, nota:m.nota, tarde: !!m.ultimaHora,
             esPortero,
             ge: apuntado ? m.ge : '',
             gePlaceholder: reparto ? '🥅 ' + reparto.ge : '🥅',
@@ -6229,7 +6642,22 @@ class Component extends DCLogic {
               style:fila(anul), botonStyle:boton(anul), textoBoton: anul ? 'Recuperar' : 'Anular',
               alternar: () => cambiar('nota', n.votante, n.jugador_id, !anul) };
           });
-        return { votos:votosLista, notas:notasLista, hayVotos:votosLista.length > 0, hayNotas:notasLista.length > 0,
+        const actaJ = st.actas.find(a => a.jornada === jor);
+        const elegibles = actaJ ? porDorsal(JUG.filter(j => (actaJ.minutos || []).some(m => m.id === j.id && m.min > 0) || (jor === jornadaViva && extraVotan.indexOf(j.id) !== -1))) : [];
+        const participacion = elegibles.map(j => {
+          const pf = perfiles.find(x => x.jugador_id === j.id);
+          const uid = pf && pf.id;
+          const mvp = !!uid && todosVotos.some(v => v.jornada === jor && v.votante === uid);
+          const nN = uid ? (st.notas || []).filter(n => n.jornada === jor && n.votante === uid).length : 0;
+          const col = mvp && nN ? '#2FA8A0' : mvp || nN ? '#F5C518' : '#E4404A';
+          return { nombre:j.nombre, mvp, nN,
+            marca: (mvp ? 'MVP ✓' : 'MVP ✗') + ' · ' + (nN ? nN + ' notas' : 'sin notas'),
+            style:'display:flex;flex-direction:column;gap:2px;background:' + col + '14;border:1px solid ' + col + ';border-radius:10px;padding:6px 10px;min-width:104px' };
+        });
+        return { participacion, hayParticipacion:participacion.length > 0,
+          resumenMvp: participacion.filter(p => p.mvp).length + ' de ' + participacion.length,
+          resumenNotas: participacion.filter(p => p.nN).length + ' de ' + participacion.length,
+          votos:votosLista, notas:notasLista, hayVotos:votosLista.length > 0, hayNotas:notasLista.length > 0,
           sinVotos:votosLista.length === 0, sinNotas:notasLista.length === 0,
           nAnulados: (st.anulaciones || []).filter(a => a.jornada === jor).length };
       })(),
@@ -6570,7 +6998,11 @@ class Component extends DCLogic {
             importe:p.importe, fecha:p.fecha || '',
             borrar: () => { if (!admin) return; this.bk.borrar('pagos', p.id); this.setState(s => ({ pagos: s.pagos.filter(x => x.id !== p.id) })); }
           })),
-          apuntar: () => { if (admin) this.setState({ cobroJugador:j.id, cobroImporte:'', cobroConcepto:(st.economia.conceptos[0] || {}).id || '' }); }
+          apuntar: () => {
+            if (!admin) return;
+            if (alDia) { this.setState({ sinDeuda:{ id:j.id, nombre:j.nombre } }); return; }
+            this.setState({ cobroJugador:j.id, cobroImporte:'', cobroConcepto:(st.economia.conceptos[0] || {}).id || '' });
+          }
         };
       }),
 
@@ -6580,12 +7012,43 @@ class Component extends DCLogic {
       cobroImporte: st.cobroImporte,
       setCobroImporte: e => this.setState({ cobroImporte:e.target.value }),
       cobroConcepto: st.cobroConcepto,
-      setCobroConcepto: e => this.setState({ cobroConcepto:e.target.value }),
-      opcionesConcepto: (st.economia.conceptos || []).map(c => ({ v:c.id, label:c.nombre + ' (' + c.importe + ' €)' })),
+      setCobroConcepto: e => {
+        const v = e.target.value;
+        // Al elegir «Multas», el importe se rellena con lo que debe por multas.
+        const deuda = (st.multas || []).filter(m => m.jugador_id === st.cobroJugador && !m.pagada).reduce((s, m) => s + Number(m.importe || 0), 0);
+        this.setState({ cobroConcepto:v, cobroImporte: v === '__multas__' ? String(deuda) : st.cobroImporte });
+      },
+      opcionesConcepto: (() => {
+        const pend = (st.multas || []).filter(m => m.jugador_id === st.cobroJugador && !m.pagada);
+        const deuda = pend.reduce((s, m) => s + Number(m.importe || 0), 0);
+        const lista = (st.economia.conceptos || []).map(c => ({ v:c.id, label:c.nombre + ' (' + c.importe + ' €)' }));
+        // Si el jugador tiene multas sin pagar, aparece el concepto «Multas» solo.
+        return pend.length ? [{ v:'__multas__', label:'💸 Multas pendientes (' + deuda + ' € · ' + pend.length + ')' }].concat(lista) : lista;
+      })(),
+      hayMultasCobro: (st.multas || []).some(m => m.jugador_id === st.cobroJugador && !m.pagada),
+      detalleMultasCobro: (st.multas || []).filter(m => m.jugador_id === st.cobroJugador && !m.pagada).map(m => m.tipo + ' ' + m.importe + ' €').join(' · '),
       cerrarCobro: () => this.setState({ cobroJugador:null }),
+      haySinDeuda: !!st.sinDeuda,
+      sinDeudaNombre: st.sinDeuda ? st.sinDeuda.nombre : '',
+      cerrarSinDeuda: () => this.setState({ sinDeuda:null }),
+      cobrarIgualmente: () => this.setState({ cobroJugador: st.sinDeuda.id, cobroImporte:'', cobroConcepto:(st.economia.conceptos[0] || {}).id || '', sinDeuda:null }),
       guardarCobro: async () => {
         const imp = this.num(st.cobroImporte);
         if (!imp) { this.setState({ avisoGuardado:'Pon cuánto ha pagado.' }); return; }
+        // Cobro de multas: salda las más antiguas primero con lo que paga.
+        // No crea un pago aparte, para no contar dos veces el mismo dinero.
+        if (st.cobroConcepto === '__multas__') {
+          const pend = (st.multas || []).filter(m => m.jugador_id === st.cobroJugador && !m.pagada).sort((a, b) => a.id - b.id);
+          let resto = imp; const saldadas = [];
+          pend.forEach(m => { if (resto >= Number(m.importe || 0)) { resto -= Number(m.importe || 0); saldadas.push(m.id); } });
+          if (!saldadas.length) { this.setState({ avisoGuardado:'Ese importe no cubre ni la multa más pequeña (' + Math.min.apply(null, pend.map(m => Number(m.importe || 0))) + ' €).' }); return; }
+          this.setState(s => ({
+            multas: (s.multas || []).map(m => saldadas.indexOf(m.id) !== -1 ? Object.assign({}, m, { pagada:true }) : m),
+            cobroJugador:null, cobroImporte:'',
+            avisoGuardado: saldadas.length + ' multa(s) saldada(s)' + (resto > 0 ? '. Sobran ' + resto + ' € sin asignar: apúntalos en otro concepto.' : '.')
+          }));
+          return;
+        }
         const conceptos = st.economia.conceptos || [];
         // Si el concepto elegido ya no existe (se borró o renombró), se usa el primero.
         const concepto = conceptos.some(c => c.id === st.cobroConcepto) ? st.cobroConcepto : ((conceptos[0] || {}).id || 'cuota');
@@ -6600,6 +7063,7 @@ class Component extends DCLogic {
       },
 
       verRotacion: this.visible('rotacion'),
+      verSugerenciaMinutos: this.visible('sugerenciaMinutos'),
       rotacion: (() => {
         const n = jugados.length || 1;
         const lista = activos.map(p => ({ p, media: Math.round((p.min || 0) / n) })).sort((a, b) => a.media - b.media);

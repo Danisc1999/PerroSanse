@@ -1066,3 +1066,41 @@ export async function reaccionar(publicacionId, emoji, activo) {
 export function fusionar(base, guardado) { return guardado && guardado.length ? guardado : base; }
 export async function borrarTodo() {}
 export async function huella(t) { return String(t); }
+
+
+/* ---------- PROPUESTAS DE ALINEACIÓN ---------- */
+
+export async function listarPropuestas() {
+  if (!sesion) return { ok: false };
+  const [p, v] = await Promise.all([
+    sb.from('propuestas_alineacion').select('*').order('id', { ascending: false }),
+    sb.from('votos_propuesta').select('*')
+  ]);
+  if (p.error) return { ok: false, error: p.error.message };
+  return { ok: true, propuestas: p.data || [], votos: v.data || [] };
+}
+
+/** Una propuesta por persona y jornada. El autor y el rol los fija el
+ *  servidor a partir de la sesión, no lo que mande la app. */
+export async function guardarPropuesta(jornada, formacion, once) {
+  if (!sesion) return { ok: false, error: 'Sin sesión.' };
+  const autor = sesion.nombre || (sesion.rol === 'fan' ? 'Fan' : 'Jugador');
+  await sb.from('propuestas_alineacion').delete().eq('jornada', jornada).eq('perfil_id', sesion.perfilId);
+  const { error } = await sb.from('propuestas_alineacion')
+    .insert({ jornada, perfil_id: sesion.perfilId, autor, rol: sesion.rol, formacion, once });
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
+export async function borrarPropuesta(id) {
+  const { error } = await sb.from('propuestas_alineacion').delete().eq('id', id);
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
+/** valor: 1 = a favor, -1 = en contra, 0 = quitar el voto. */
+export async function votarPropuesta(propuestaId, valor) {
+  if (!sesion) return { ok: false, error: 'Sin sesión.' };
+  await sb.from('votos_propuesta').delete().eq('propuesta_id', propuestaId).eq('votante', sesion.perfilId);
+  if (!valor) return { ok: true };
+  const { error } = await sb.from('votos_propuesta').insert({ propuesta_id: propuestaId, votante: sesion.perfilId, valor });
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
