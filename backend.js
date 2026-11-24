@@ -63,7 +63,16 @@ async function perfilDe(user, rolEsperado) {
 export async function sesionActual() {
   const { data } = await sb.auth.getSession();
   if (!data || !data.session) return { ok: false };
-  return perfilDe(data.session.user);
+  const r = await perfilDe(data.session.user);
+  try {
+    if (r.ok) { localStorage.setItem('psfc-perfil', JSON.stringify({ uid: data.session.user.id, r, sesion })); return r; }
+    if (/fetch|network|load failed/i.test(r.error || '')) {
+      // Sin red: se abre con el último perfil conocido, solo para consultar.
+      const c = JSON.parse(localStorage.getItem('psfc-perfil') || 'null');
+      if (c && c.uid === data.session.user.id) { sesion = c.sesion; return Object.assign({}, c.r, { sinRed: true }); }
+    }
+  } catch (e) {}
+  return r;
 }
 
 async function entrar(email, pass, rolEsperado) {
@@ -149,6 +158,25 @@ export async function recuperarPass(email) {
 }
 
 /* ---------------- LEER ---------------- */
+
+const CLAVE_CACHE = 'psfc-cache-v1';
+
+/** Carga los datos; si no hay red, devuelve la última copia que se vio.
+ *  La copia es SOLO para consultar: con ella la app no deja guardar nada,
+ *  para no pisar lo que otro haya cambiado mientras tanto. */
+export async function cargarConCache() {
+  let d = null;
+  try { d = await cargar(); } catch (e) { d = null; }
+  if (d && !d.sinRed) {
+    try { localStorage.setItem(CLAVE_CACHE, JSON.stringify({ t: Date.now(), uid: sesion && sesion.perfilId, d })); } catch (e) {}
+    return { datos: d, cache: false };
+  }
+  try {
+    const c = JSON.parse(localStorage.getItem(CLAVE_CACHE) || 'null');
+    if (c && c.d && (!sesion || c.uid === sesion.perfilId)) return { datos: c.d, cache: true, desde: c.t };
+  } catch (e) {}
+  return d ? { datos: d, cache: false } : null;
+}
 
 export async function cargar() {
   if (!sesion) return null;
@@ -281,6 +309,7 @@ export async function cargar() {
         .sort((a, b) => (a.orden || 0) - (b.orden || 0));
       return lista.length ? lista : null;
     })(),
+    sinRed: [jug, cam, par].some(x => x && x.error && /fetch|network|load failed/i.test(x.error.message || '')),
     faltaClasificacion: !!cla.error,
     favoritos,
     votoPorJornada,
@@ -344,17 +373,36 @@ function filasConvocatorias(datos, jornada) {
   return filas;
 }
 
-/** Guarda las actas. Si la base aún no tiene la columna «votantes_extra»
- *  (falta ejecutar el SQL), se guardan sin ella para no perder nada. */
+/** Guarda las actas. Las columnas «votantes_extra», «registro» y «podio» son
+ *  opcionales: si la base aún no las tiene (falta ejecutar SQL_PENDIENTE.sql)
+ *  se van quitando una a una hasta que el guardado entra, para no perder el
+ *  acta. Se devuelve el aviso de qué se quedó sin guardar. */
 async function upsertActas(actas) {
-  const filas = actas.map(a => ({
+  const OPCIONALES = ['votantes_extra', 'registro', 'podio'];
+  let filas = actas.map(a => ({
     id: a.id, jornada: a.jornada, rival: a.rival, fecha: a.fecha,
     gf: a.gf, gc: a.gc, eventos: a.eventos, minutos: a.minutos, mvp_id: a.mvp_id || null,
-    votantes_extra: a.votantes_extra || []
+    votantes_extra: a.votantes_extra || [],
+    registro: a.registro || [],
+    podio: a.podio || null
   }));
-  const r = await sb.from('actas').upsert(filas);
-  if (r.error && /votantes_extra/.test(r.error.message || '')) {
-    return sb.from('actas').upsert(filas.map(x => { const y = Object.assign({}, x); delete y.votantes_extra; return y; }));
+  const descartadas = [];
+  let r = await sb.from('actas').upsert(filas);
+  // PostgREST nombra UNA columna ausente por intento: se repite hasta que no quede ninguna.
+  for (let i = 0; i < OPCIONALES.length && r.error; i++) {
+    const msg = r.error.message || '';
+    const falta = OPCIONALES.filter(k => filas[0] && k in filas[0] && new RegExp("'" + k + "'|\\b" + k + "\\b").test(msg));
+    if (!falta.length) break;
+    falta.forEach(k => descartadas.push(k));
+    filas = filas.map(x => { const y = Object.assign({}, x); falta.forEach(k => delete y[k]); return y; });
+    r = await sb.from('actas').upsert(filas);
+  }
+  if (!r.error && descartadas.length) {
+    // Entró el acta, pero sin esas columnas: se avisa en vez de perderlas en silencio.
+    const util = descartadas.filter(k => k !== 'votantes_extra' || actas.some(a => (a.votantes_extra || []).length));
+    const hay = descartadas.some(k => actas.some(a => { const v = a[k]; return Array.isArray(v) ? v.length : !!v; }));
+    return Object.assign({}, r, { avisoColumnas: hay
+      ? 'El acta se ha guardado, pero falta ejecutar SQL_PENDIENTE.sql en Supabase: sin él no se guarda ' + descartadas.join(', ') + '.' : '' });
   }
   return r;
 }
@@ -544,6 +592,9 @@ export async function guardar(datos) {
     if (rf && rf.error) fallos.push('tus favoritos (' + rf.error + ')');
     if (eco && !eco.ok) fallos.push('las multas o cuotas (' + eco.error + ')');
     if (fallos.length) return { ok: false, error: 'No se pudo guardar ' + fallos.join('; ') };
+    // El acta entró, pero la base no tiene alguna columna nueva: se avisa en vez de perderla en silencio.
+    const avisoCol = res[3] && res[3].avisoColumnas;
+    if (avisoCol) return { ok: false, error: avisoCol };
 
     const sinId = (datos.clasificacion || []).length && !conId.length;
     return { ok: true, faltaSembrar: !!sinId };
@@ -1103,4 +1154,30 @@ export async function votarPropuesta(propuestaId, valor) {
   if (!valor) return { ok: true };
   const { error } = await sb.from('votos_propuesta').insert({ propuesta_id: propuestaId, votante: sesion.perfilId, valor });
   return error ? { ok: false, error: error.message } : { ok: true };
+}
+
+/** Una visita a una pestaña (los accesos del míster no se cuentan). */
+export async function registrarPestana(tab) {
+  if (!sesion || sesion.rol === 'mister') return;
+  try { await sb.from('uso_pestanas').insert({ perfil_id: sesion.perfilId, tab }); } catch (e) {}
+}
+export async function usoPestanas() {
+  if (!sesion || sesion.rol !== 'mister') return [];
+  const desde = new Date(Date.now() - 60 * 864e5).toISOString();
+  const r = await sb.from('uso_pestanas').select('perfil_id, tab, creado').gte('creado', desde).limit(20000);
+  return r.error ? [] : (r.data || []);
+}
+
+/** Descarga de todo lo guardado, tabla a tabla. Solo el míster. */
+export async function copiaSeguridad() {
+  if (!sesion || sesion.rol !== 'mister') return null;
+  const tablas = ['jugadores','campos','partidos','convocatorias','alineaciones','actas','avisos','publicaciones','comentarios',
+    'favoritos','votos_mvp','notas','multas','pagos','sugerencias','clasificacion','historico_liga','temporadas','ajustes',
+    'propuestas','votos_propuesta','anulaciones','perfiles'];
+  const out = { generado: new Date().toISOString() };
+  for (const t of tablas) {
+    const r = await sb.from(t).select('*').limit(50000);
+    out[t] = r.error ? { error: r.error.message } : r.data;
+  }
+  return out;
 }

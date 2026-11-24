@@ -256,7 +256,7 @@
           <div style="font-family:'Barlow Condensed',sans-serif;letter-spacing:.2em;font-size:12px;color:#FF2E88;text-transform:uppercase">Próximo partido · Jornada {{ proximo.num }}</div>
           <div style="display:flex;align-items:center;gap:14px;margin-top:12px">
             <div style="{{ proximo.nuestroBadgeGrande }}"></div>
-            <div style="font-family:'Anton',sans-serif;font-size:18px;color:#6D6D7A">VS</div>
+            <div style="font-family:'Anton',sans-serif;font-size:18px;color:#6D6D7A;order:1">VS</div>
             <div style="{{ proximo.rivalBadgeGrande }}">{{ proximo.rivalInicial }}</div>
           </div>
           <div style="font-family:'Anton',sans-serif;font-size:clamp(26px,5vw,38px);line-height:1.05;margin-top:10px;text-transform:uppercase;overflow-wrap:anywhere">{{ proximo.enfrentamiento }}</div>
@@ -354,7 +354,19 @@
                 </div>
                 <div style="font-size:11px;color:#8A8A96;font-family:'Barlow Condensed',sans-serif">J{{ g.jornada }}</div>
                 <div style="{{ g.resStyle }}">{{ g.res }}</div>
+                <div style="font-size:11px;color:#F5C518;font-family:'Barlow Condensed',sans-serif;min-height:14px">{{ g.notaTxt }}</div>
               </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ hayResumen }}">
+        <div style="background:#101014;border:1px solid #26262E;border-radius:18px;padding:18px;margin-top:16px">
+          <div style="font-family:'Anton',sans-serif;font-size:18px;text-transform:uppercase">✅ Qué te falta por hacer</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px">
+            <sc-for list="{{ resumenJornada }}" as="r" hint-placeholder-count="6">
+              <div style="{{ r.style }}">{{ r.icono }} {{ r.txt }}</div>
             </sc-for>
           </div>
         </div>
@@ -616,7 +628,8 @@
             <div style="display:flex;flex-direction:column;gap:8px">
               <sc-for list="{{ listaConvocatoria }}" as="p" hint-placeholder-count="16">
                 <div onClick="{{ p.toggle }}" style="{{ p.rowStyle }}">
-                  <div style="width:34px;font-family:'Anton',sans-serif;font-size:20px;color:#6D6D7A">{{ p.dorsal }}</div>
+                  <div style="width:30px;font-family:'Anton',sans-serif;font-size:18px;color:#6D6D7A">{{ p.dorsal }}</div>
+                  <div style="{{ p.avatarMini }};margin-right:10px">{{ p.iniciales }}</div>
                   <div style="flex:1;font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:19px;text-transform:uppercase">{{ p.nombre }}</div>
                   <div style="font-size:11px;color:#8A8A96;letter-spacing:.1em;text-transform:uppercase;margin-right:10px">{{ p.pos }}</div>
                   <div style="{{ p.pillStyle }}">{{ p.estadoLabel }}</div>
@@ -671,6 +684,7 @@
             </div>
           </sc-if>
           <sc-if value="{{ puedePublicarJornada }}">
+            <button onClick="{{ recordarPendientes }}" style="width:100%;margin-top:14px;background:#16161C;border:1px solid #F5C518;color:#F5C518;border-radius:12px;padding:11px;font-weight:700;font-size:14px;cursor:pointer">🔔 Recordar a los que faltan ({{ nPendientes }})</button>
             <button onClick="{{ publicarConvocatoria }}" style="width:100%;margin-top:14px;background:#FF2E88;color:#0B0B0D;border:0;border-radius:12px;padding:12px;font-weight:700;font-size:15px;cursor:pointer">📣 Publicar convocatoria</button>
           </sc-if>
         </div>
@@ -798,6 +812,9 @@
               <option value="{{ o.v }}">{{ o.label }}</option>
             </sc-for>
           </select>
+          <sc-if value="{{ hayJornadaElegida }}">
+            <button onClick="{{ toggleCompleta }}" style="background:#16161C;border:1px solid #33333D;color:#EDEDF2;border-radius:999px;padding:9px 14px;font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap">{{ textoCompleta }}</button>
+          </sc-if>
           <div style="display:flex;gap:6px;background:#141419;border:1px solid #26262E;border-radius:999px;padding:4px">
             <sc-for list="{{ vistasCal }}" as="v" hint-placeholder-count="2">
               <button onClick="{{ v.go }}" style="{{ v.style }}">{{ v.label }}</button>
@@ -812,6 +829,29 @@
         <div style="font-family:'Anton',sans-serif;font-size:20px;text-transform:uppercase;margin-top:10px">Sin calendario</div>
         <div style="font-size:14px;color:#8A8A96;margin-top:6px">Cuando salga el oficial, las jornadas aparecerán aquí.</div>
       </div>
+      </sc-if>
+
+      <sc-if value="{{ hayCompleta }}">
+        <div style="background:#101014;border:1px solid #26262E;border-radius:18px;padding:14px;margin-top:16px">
+          <div style="font-family:'Anton',sans-serif;font-size:18px;text-transform:uppercase">Jornada completa</div>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px">
+            <sc-for list="{{ jornadaCompleta }}" as="m" hint-placeholder-count="7">
+              <div style="{{ m.rowStyle }}">
+                <div style="flex:1;min-width:0;text-align:right">
+                  <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px;text-transform:uppercase">{{ m.local }}</div>
+                  <div style="font-size:11px;color:#8A8A96">{{ m.infoL }}</div>
+                </div>
+                <div style="{{ m.localBadge }}">{{ m.localSigla }}</div>
+                <div style="font-family:'Anton',sans-serif;font-size:24px;min-width:70px;text-align:center;color:#EDEDF2">{{ m.marcador }}</div>
+                <div style="{{ m.visitaBadge }}">{{ m.visitaSigla }}</div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px;text-transform:uppercase">{{ m.visita }}</div>
+                  <div style="font-size:11px;color:#8A8A96">{{ m.infoV }}</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
       </sc-if>
 
       <sc-if value="{{ calVistaLista }}">
@@ -895,21 +935,21 @@
       <div style="{{ acta.marcoStyle }}">
         <div style="{{ acta.brilloStyle }}"></div>
         <div style="position:relative;display:flex;align-items:center;justify-content:center;gap:28px;flex-wrap:wrap">
-          <div style="text-align:center">
+          <div style="text-align:center;order:{{ acta.ordenNuestro }}">
             <img src="uploads/Escudo.jpg" alt="" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:2px solid #FF2E88">
             <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;margin-top:8px">Perro Sanse</div>
           </div>
           <sc-if value="{{ noEsAdmin }}">
-            <div style="font-family:'Anton',sans-serif;font-size:64px;line-height:1">{{ acta.marcador }}</div>
+            <div style="font-family:'Anton',sans-serif;font-size:64px;line-height:1;order:1">{{ acta.marcador }}</div>
           </sc-if>
           <sc-if value="{{ esAdmin }}">
-            <div style="display:flex;align-items:center;gap:8px">
-              <input value="{{ acta.gf }}" onChange="{{ acta.setGf }}" style="{{ scoreInputStyle }}"></input>
+            <div style="display:flex;align-items:center;gap:8px;order:1">
+              <input value="{{ acta.izqVal }}" onChange="{{ acta.setIzq }}" style="{{ scoreInputStyle }}"></input>
               <div style="font-family:'Anton',sans-serif;font-size:40px;color:#8A8A96">-</div>
-              <input value="{{ acta.gc }}" onChange="{{ acta.setGc }}" style="{{ scoreInputStyle }}"></input>
+              <input value="{{ acta.derVal }}" onChange="{{ acta.setDer }}" style="{{ scoreInputStyle }}"></input>
             </div>
           </sc-if>
-          <div style="text-align:center">
+          <div style="text-align:center;order:{{ acta.ordenRival }}">
             <div style="{{ acta.rivalBadge }}">{{ acta.inicial }}</div>
             <sc-if value="{{ noEsAdmin }}">
               <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;margin-top:8px">{{ acta.rival }}</div>
@@ -920,7 +960,7 @@
           </div>
         </div>
         <div style="position:relative;display:flex;align-items:center;justify-content:center;gap:12px;margin-top:16px;flex-wrap:wrap">
-          <div style="font-size:13px;color:#8A8A96">Jornada {{ acta.jornada }} · {{ acta.fecha }}</div>
+          <div style="font-size:13px;color:#8A8A96">Jornada {{ acta.jornada }} · {{ acta.fecha }} · {{ acta.localiaTxt }} (el local va a la izquierda)</div>
           <div style="{{ acta.resultadoPill }}">{{ acta.resultadoLabel }}</div>
         </div>
       </div>
@@ -945,7 +985,7 @@
                 <input value="{{ e.min }}" onChange="{{ e.setMin }}" style="{{ e.minInputStyle }}"></input>
                 <select value="{{ e.jugador }}" onChange="{{ e.setJugador }}" style="{{ inputFlexCorto }}">
                   <sc-for list="{{ nombresJugadores }}" as="n" hint-placeholder-count="16">
-                    <option value="{{ n.v }}">{{ n.v }}</option>
+                    <option value="{{ n.v }}">{{ n.label }}</option>
                   </sc-for>
                 </select>
                 <select value="{{ e.tipo }}" onChange="{{ e.setTipo }}" style="{{ inputFlexLargo }}">
@@ -995,6 +1035,7 @@
           </sc-if>
           <sc-for list="{{ acta.minutos }}" as="m" hint-placeholder-count="8">
             <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #1C1C22">
+              <sc-if value="{{ esAdmin }}"><button onClick="{{ m.noVino }}" title="No vino o no se presentó" style="background:transparent;border:1px solid #3A2430;color:#FF6FAC;border-radius:8px;padding:2px 7px;cursor:pointer;font-size:12px">✕</button></sc-if>
               <div style="{{ m.avatarStyle }}">{{ m.iniciales }}</div>
               <div style="flex:1;min-width:0">
                 <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:600;text-transform:uppercase">{{ m.nombre }}<sc-if value="{{ m.tarde }}"><span style="margin-left:8px;font-size:10px;letter-spacing:.1em;color:#F5C518;border:1px solid #F5C518;border-radius:999px;padding:2px 7px;vertical-align:middle">⏱ ÚLTIMA HORA</span></sc-if></div>
@@ -1007,10 +1048,16 @@
                   <div style="font-size:12px;color:#B06C4B;white-space:nowrap">🥅 {{ m.geTexto }}</div>
                 </sc-if>
                 <div style="font-size:13px;color:#8A8A96;width:56px;text-align:right">{{ m.min }}'</div>
-                <div style="{{ m.notaStyle }}">{{ m.nota }}</div>
+                <div style="{{ m.notaStyle }}">{{ m.notaTxt }}</div>
               </sc-if>
               <sc-if value="{{ esAdmin }}">
                 <input value="{{ m.min }}" onChange="{{ m.setMin }}" style="{{ miniInputStyle }}"></input>
+                <sc-if value="{{ m.esBanda }}">
+                  <select value="{{ m.rolBanda }}" onChange="{{ m.setRolBanda }}" title="Cómo jugó ese día (solo lo ves tú)" style="{{ m.rolStyle }}">
+                    <option value="carrilero">Carrilero</option>
+                    <option value="ofensiva">B. ofensiva</option>
+                  </select>
+                </sc-if>
                 <sc-if value="{{ m.esPortero }}">
                   <input value="{{ m.ge }}" onChange="{{ m.setGe }}" placeholder="{{ m.gePlaceholder }}" title="Goles encajados por este portero" style="{{ m.geStyle }}"></input>
                 </sc-if>
@@ -1022,6 +1069,14 @@
       </div>
 
       <sc-if value="{{ hayAnteriores }}">
+      <sc-if value="{{ hayRegistroActa }}">
+        <div style="background:#101014;border:1px dashed #33333D;border-radius:14px;padding:12px 14px;margin-top:16px">
+          <div style="font-family:'Barlow Condensed',sans-serif;letter-spacing:.14em;font-size:11px;color:#F5C518;text-transform:uppercase">📝 Cambios hechos en este acta</div>
+          <sc-for list="{{ registroActa }}" as="r" hint-placeholder-count="2">
+            <div style="font-size:13px;color:#C9C9D2;margin-top:6px">{{ r.texto }} <span style="color:#6D6D7A">· {{ r.por }} · {{ r.cuando }}</span></div>
+          </sc-for>
+        </div>
+      </sc-if>
       <div style="font-family:'Anton',sans-serif;font-size:20px;text-transform:uppercase;margin:28px 0 12px">Actas anteriores</div>
       <div style="display:flex;flex-direction:column;gap:10px">
         <sc-for list="{{ actasAnteriores }}" as="a" hint-placeholder-count="3">
@@ -1206,10 +1261,9 @@
       <div style="background:#101014;border:1px solid #26262E;border-radius:18px;margin-top:16px;overflow-x:auto">
         <div style="display:grid;grid-template-columns:34px 44px minmax(150px,1.4fr) repeat(9,minmax(54px,.5fr)) 92px;min-width:1020px;padding:12px 16px;border-bottom:1px solid #24242C;font-family:'Barlow Condensed',sans-serif;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#8A8A96">
           <div></div><div>#</div><div>Jugador</div>
-          <div style="color:#C9C9D2">📋 PJ</div><div style="color:#8B9DC3">⏱️ Min</div>
-          <div style="color:#FF2E88">⚽ G</div><div style="color:#2FA8A0">🅰️ A</div>
-          <div style="color:#F5C518">🟨</div><div style="color:#E4404A">🟥</div>
-          <div style="color:#F2841E">🧤 P0</div><div style="color:#B06C4B">🥅 GE</div><div>⭐ Nota</div><div>📈 Forma</div>
+          <sc-for list="{{ cabeceras }}" as="h" hint-placeholder-count="10">
+            <div onClick="{{ h.go }}" title="Ordenar" style="{{ h.style }}">{{ h.label }}{{ h.flecha }}</div>
+          </sc-for>
         </div>
         <sc-for list="{{ tabla }}" as="p" hint-placeholder-count="16">
           <div style="{{ p.rowStyle }}" style-hover="background:rgba(255,255,255,.06)">
@@ -1528,6 +1582,14 @@
 
       <sc-if value="{{ mvpNotas }}">
         <div style="font-size:14px;color:#8A8A96;margin-top:14px">{{ textoNotas }}</div>
+        <sc-if value="{{ tieneMiNota }}">
+          <div style="display:flex;gap:18px;flex-wrap:wrap;align-items:center;background:linear-gradient(120deg,#1A1610,#101014);border:1px solid #F5C518;border-radius:16px;padding:14px 18px;margin-top:12px">
+            <div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#F5C518;font-family:'Barlow Condensed',sans-serif">Tú ahora</div>
+            <div><span style="font-family:'Anton',sans-serif;font-size:30px">{{ miNotaTexto }}</span> <span style="font-size:12px;color:#8A8A96">nota media · {{ miNotaVotos }} notas</span></div>
+            <div><span style="font-family:'Anton',sans-serif;font-size:30px">{{ miMvpVotos }}</span> <span style="font-size:12px;color:#8A8A96">votos MVP</span></div>
+            <div><span style="font-family:'Anton',sans-serif;font-size:30px;color:#FF2E88">{{ miPuntosMvp }}</span> <span style="font-size:12px;color:#8A8A96">puntos</span></div>
+          </div>
+        </sc-if>
         <sc-if value="{{ sinVotacion }}">
           <div style="background:#101014;border:1px dashed #2A2A33;border-radius:18px;padding:40px 24px;text-align:center;margin-top:16px">
             <div style="font-size:30px;opacity:.5">📝</div>
@@ -2250,15 +2312,24 @@
               <div style="font-family:'Anton',sans-serif;font-size:18px;text-transform:uppercase">{{ p.autor }}</div>
               <div style="font-family:'Barlow Condensed',sans-serif;font-size:14px;color:#FF2E88">{{ p.formacion }}</div>
             </div>
-            <div style="display:flex;flex-direction:column;gap:5px;margin-top:12px">
-              <sc-for list="{{ p.once }}" as="o" hint-placeholder-count="7">
-                <div style="display:flex;gap:10px;align-items:center;font-size:14px">
-                  <div style="width:78px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;{{ o.colStyle }}">{{ o.rol }}</div>
-                  <div style="flex:1;font-family:'Barlow Condensed',sans-serif;font-weight:600;text-transform:uppercase">{{ o.nombre }}</div>
-                  <div style="font-family:'Anton',sans-serif;color:#6D6D7A">{{ o.dorsal }}</div>
+            <sc-if value="{{ p.insignia }}"><div style="margin-top:10px;font-size:12px;color:#F5C518;font-family:'Barlow Condensed',sans-serif;letter-spacing:.12em;text-transform:uppercase">🏆 La más votada</div></sc-if>
+            <div style="{{ p.campoStyle }}">
+              <div style="position:absolute;left:0;right:0;top:50%;height:1px;background:rgba(255,255,255,.14)"></div>
+              <div style="position:absolute;left:50%;top:50%;width:54px;height:54px;margin:-27px 0 0 -27px;border:1px solid rgba(255,255,255,.14);border-radius:50%"></div>
+              <sc-for list="{{ p.fichas }}" as="x" hint-placeholder-count="7">
+                <div style="{{ x.style }}">
+                  <div style="{{ x.avatarStyle }}">{{ x.iniciales }}</div>
+                  <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;text-transform:uppercase;text-shadow:0 1px 3px #000;margin-top:2px;line-height:1">{{ x.nombre }}</div>
+                  <sc-if value="{{ x.aviso }}"><div style="font-size:9px;color:#F5C518;text-shadow:0 1px 3px #000">⚠ {{ x.aviso }}</div></sc-if>
                 </div>
               </sc-for>
             </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">
+              <sc-for list="{{ p.datos }}" as="d" hint-placeholder-count="4">
+                <div style="{{ d.style }}">{{ d.txt }}</div>
+              </sc-for>
+            </div>
+            <div style="height:6px;background:#1C1C22;border-radius:6px;margin-top:10px;overflow:hidden"><div style="{{ p.aprobStyle }}"></div></div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;align-items:center">
               <button onClick="{{ p.votarArriba }}" style="{{ p.upStyle }}">👍 {{ p.up }}</button>
               <button onClick="{{ p.votarAbajo }}" style="{{ p.downStyle }}">👎 {{ p.down }}</button>
@@ -2644,6 +2715,32 @@
         </div>
         </sc-if>
 
+        <sc-if value="{{ subRecursos }}">
+        <div style="max-width:520px;background:#101014;border:1px solid #26262E;border-radius:18px;padding:20px;margin-top:16px">
+          <div style="font-family:'Anton',sans-serif;font-size:18px;text-transform:uppercase">💾 Copia de seguridad</div>
+          <div style="font-size:13px;color:#8A8A96;margin-top:4px">Descarga todo lo guardado (jugadores, actas, votos, cobros…) en un archivo. Hazlo cada pocas jornadas.</div>
+          <button onClick="{{ copiaSeguridad }}" style="margin-top:12px;background:#FF2E88;color:#0B0B0D;border:0;border-radius:10px;padding:10px 18px;font-weight:700;cursor:pointer">Descargar copia</button>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ subPestanas }}">
+        <div style="max-width:620px;background:#101014;border:1px solid #26262E;border-radius:18px;padding:20px;margin-top:16px">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+            <div style="font-family:'Anton',sans-serif;font-size:18px;text-transform:uppercase">📈 Qué se usa y qué no</div>
+            <button onClick="{{ recargarPestanas }}" style="background:#16161C;border:1px solid #33333D;color:#EDEDF2;border-radius:10px;padding:7px 12px;cursor:pointer;font-size:13px">↻ Actualizar</button>
+          </div>
+          <div style="font-size:13px;color:#8A8A96;margin-top:4px">Visitas de jugadores y fans a cada pestaña, últimos 60 días. Las tuyas no cuentan. {{ pestanasTotal }} visitas · {{ pestanasUsuarios }} personas.</div>
+          <div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">
+            <sc-for list="{{ pestanasStats }}" as="t" hint-placeholder-count="12">
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:14px"><div>{{ t.label }}</div><div style="color:#8A8A96">{{ t.n }} visitas · {{ t.usuarios }} personas</div></div>
+                <div style="height:7px;background:#1C1C22;border-radius:6px;margin-top:4px;overflow:hidden"><div style="{{ t.barStyle }}"></div></div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        </sc-if>
+
         <sc-if value="{{ subPruebas }}">
         <div style="max-width:520px;background:#101014;border:1px solid #26262E;border-radius:18px;padding:20px;margin-top:16px">
           <div style="font-family:'Anton',sans-serif;font-size:18px;text-transform:uppercase">🧪 Datos de ejemplo</div>
@@ -2698,6 +2795,7 @@
             <div style="{{ ficha.formaStyle }}">{{ ficha.forma }}</div>
             <sc-if value="{{ ficha.hayDelta }}"><div style="font-size:11px;font-weight:700;{{ ficha.deltaStyle }}">antes {{ ficha.delta }}</div></sc-if>
             <div style="font-size:11px;color:#8A8A96;text-transform:uppercase;letter-spacing:.1em">Forma</div>
+            <div style="font-size:10px;color:#6D6D7A;margin-top:2px;max-width:130px">{{ ficha.formaDesde }}</div>
           </div>
           <sc-if value="{{ ficha.mostrarFans }}">
             <div style="text-align:center">
@@ -2778,6 +2876,34 @@
             </sc-for>
           </div>
         </sc-if>
+        <div style="margin-top:16px">
+          <sc-if value="{{ ficha.evol.hay }}">
+            <div style="font-family:'Barlow Condensed',sans-serif;letter-spacing:.14em;font-size:11px;color:#8A8A96;text-transform:uppercase">Su evolución · puntos por partido</div>
+            <div style="background:#16161C;border:1px solid #24242C;border-radius:12px;padding:10px 12px;margin:8px 0 14px">
+              <svg viewBox="0 0 100 40" preserveAspectRatio="none" style="width:100%;height:84px;overflow:visible">
+                <path d="{{ ficha.evol.d }}" fill="none" stroke="#2FA8A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"></path>
+                <sc-for list="{{ ficha.evol.nodos }}" as="n" hint-placeholder-count="5">
+                  <circle cx="{{ n.cx }}" cy="{{ n.cy }}" r="2.4" fill="#FF2E88" stroke="#0B0B0D" stroke-width="1" vector-effect="non-scaling-stroke"><title>{{ n.titulo }}</title></circle>
+                </sc-for>
+              </svg>
+              <div style="display:flex;justify-content:space-between;margin-top:6px">
+                <sc-for list="{{ ficha.evol.etiquetas }}" as="e" hint-placeholder-count="5">
+                  <div style="text-align:center;font-family:'Barlow Condensed',sans-serif;line-height:1.1"><div style="font-size:11px;color:#6D6D7A">{{ e.t }}</div><div style="font-size:13px;color:#EDEDF2;font-weight:700">{{ e.v }}</div></div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+          <div style="font-family:'Barlow Condensed',sans-serif;letter-spacing:.14em;font-size:11px;color:#8A8A96;text-transform:uppercase">Últimos partidos · 🏆 {{ ficha.mvps }} MVP</div>
+          <div style="display:flex;flex-direction:column;gap:5px;margin-top:8px">
+            <sc-for list="{{ ficha.ultimos }}" as="u" hint-placeholder-count="3">
+              <div style="display:flex;gap:10px;font-size:13px;color:#C9C9D2;background:#16161C;border-radius:8px;padding:6px 10px">
+                <div style="width:30px;color:#FF2E88;font-family:'Anton',sans-serif">{{ u.j }}</div>
+                <div style="flex:1;text-transform:uppercase;font-family:'Barlow Condensed',sans-serif">{{ u.rival }} {{ u.res }}</div>
+                <div style="color:#8A8A96">{{ u.min }}'</div><div style="width:34px;text-align:right;font-family:'Anton',sans-serif">{{ u.nota }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
         <div style="display:flex;gap:8px;margin-top:20px;flex-wrap:wrap">
           <button onClick="{{ cerrarFicha }}" style="flex:1;min-width:140px;background:#FF2E88;color:#0B0B0D;border:0;border-radius:12px;padding:12px;font-weight:700;font-size:15px;cursor:pointer">Listo</button>
           <sc-if value="{{ esAdmin }}">
@@ -3075,6 +3201,13 @@
           <button onClick="{{ cerrarCobro }}" style="background:transparent;border:1px solid #33333D;color:#8A8A96;border-radius:12px;padding:12px 18px;cursor:pointer">Cancelar</button>
         </div>
       </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ haySinConexion }}">
+    <div style="position:fixed;left:0;right:0;top:0;z-index:90;background:#2A1F0A;border-bottom:1px solid #F5C518;padding:8px 14px;display:flex;align-items:center;gap:12px;justify-content:center;flex-wrap:wrap">
+      <div style="font-size:13px;color:#F5C518">{{ textoSinConexion }}</div>
+      <button onClick="{{ reintentarRed }}" style="background:#F5C518;color:#0B0B0D;border:0;border-radius:8px;padding:5px 12px;font-weight:700;font-size:12px;cursor:pointer">Reintentar</button>
     </div>
   </sc-if>
 
@@ -3384,8 +3517,48 @@ const TIPOS_CARTEL = [
 // 'todos', 'jugador', 'fan' o 'mister'.
 // Versión X.Y.Z: X cambios muy grandes, Y funcionalidades nuevas,
 // Z arreglos y retoques pequeños.
-const APP_VERSION = '1.5.0';
+const APP_VERSION = '1.8.1';
 const NOVEDADES = [
+  { version:'1.8.1', fecha:'27 nov 2026', items:[
+    { para:'todos', texto:'Los resultados siempre se ven con el equipo local primero: calendario, actas, historial, gráficas y publicaciones. En el acta, escudo, nombre y marcador siguen ese mismo orden.' },
+    { para:'todos', texto:'La app se actualiza sola con lo que publica el míster, sin tener que recargar. No se refresca mientras estás escribiendo o tocando algo.' }
+  ] },
+  { version:'1.8.0', fecha:'26 nov 2026', items:[
+    { para:'todos',   texto:'En la ficha de cada jugador, una gráfica con sus puntos partido a partido, para ver cómo evoluciona.' },
+    { para:'todos',   texto:'Sin conexión puedes seguir consultando la última versión que viste. No se puede editar hasta que vuelva la red, para no pisar cambios de otros.' },
+    { para:'jugador', texto:'Si no has contestado la convocatoria, recibirás un recordatorio automático los días previos al partido.' },
+    { para:'mister',  texto:'El recordatorio automático a quien no ha contestado se envía solo cada tarde, hasta 3 días antes del partido. Sigues teniendo el botón manual.' }
+  ] },
+  { version:'1.7.1', fecha:'25 nov 2026', items:[
+    { para:'todos', texto:'En la forma de cada jugador se ve cuál fue el último partido valorado, y «Sin datos» si todavía no hay ninguno.' },
+    { para:'todos', texto:'En las actas, un jugador sin nota aún muestra «Pend.» en lugar de un cero.' },
+    { para:'jugador', texto:'Al puntuar, la pregunta es la misma para todos: ¿cómo de bien cumplió su función ese día y cuánto ayudó al equipo?' }
+  ] },
+  { version:'1.7.0', fecha:'25 nov 2026', items:[
+    { para:'todos',   texto:'Nueva forma física: pesa sobre todo tu nota, y suman el podio del MVP (+5, +3, +1) y tus goles y asistencias según tu función ese día. Puede pasar de 100. Los minutos ya no cuentan.' },
+    { para:'todos',   texto:'Los goles y asistencias valen más cuanto más atrás juegas: delantero 1/1, medio 2/1, carrilero 3/2, central o portero 4/3.' },
+    { para:'todos',   texto:'Los porteros suman o restan según los goles que encajan: 0 → +2, 1 → +1, 2 → 0, 3 → −1, 4 o más → −2.' },
+    { para:'todos',   texto:'Si faltas, tu forma no baja. Un partido sin nota todavía muestra «Pend.» y no cuenta hasta que se valore. Cuentan los partidos de más de 10 minutos.' },
+    { para:'mister',  texto:'En el acta, cada banda tiene un selector Carrilero / B. ofensiva. Cámbialo si ese día jugó de extremo; recalcula su forma sin tocar votos ni posición.' },
+    { para:'mister',  texto:'Al cerrar la votación del MVP se guarda el podio completo, con empates compartidos.' }
+  ] },
+  { version:'1.6.1', fecha:'24 nov 2026', items:[
+    { para:'todos', texto:'Forma física más justa: los jugadores de banda parten de la misma base que un central, porque defienden y atacan, y una nota baja de los compañeros ya no se compensa con minutos o goles.' },
+    { para:'todos', texto:'«Ver jornada completa» muestra el escudo de cada equipo.' }
+  ] },
+  { version:'1.6.0', fecha:'28 nov 2026', items:[
+    { para:'todos',   texto:'Panel: top 5 en goles, asistencias y mejor forma. La nota media de cada jornada se ve ya bajo el resultado, sin pasar el ratón.' },
+    { para:'todos',   texto:'Calendario: botón «Ver jornada completa» con los 7 partidos, su resultado y la posición y puntos de cada equipo.' },
+    { para:'todos',   texto:'Estadísticas: pulsa el nombre de una columna para ordenarla. ▲ de más a menos, ▼ de menos a más.' },
+    { para:'todos',   texto:'Convocatoria en lista: ahora con la foto de cada jugador.' },
+    { para:'todos',   texto:'Propuestas rediseñadas: campo con las fotos, forma media del once, coincidencia con el oficial, avisos de jugadores fuera de posición o sin convocar y barra de aprobación.' },
+    { para:'todos',   texto:'En la ficha de cada jugador ves sus últimos partidos y sus MVP.' },
+    { para:'jugador', texto:'En MVP → Notas ves tu nota media, tus votos y tus puntos mientras se vota.' },
+    { para:'mister',  texto:'Acta: ✕ para quitar a quien no vino o no se presentó. Sale del MVP y de las estadísticas y queda anotado quién lo hizo.' },
+    { para:'mister',  texto:'Acta: los goles y asistencias solo dejan elegir a los jugadores del acta, ordenados por dorsal.' },
+    { para:'mister',  texto:'Convocatoria: botón para recordar a los que aún no han contestado. Panel: lista de lo que te falta por hacer.' },
+    { para:'mister',  texto:'Mi cuenta → Recursos: copia de seguridad descargable. Mi cuenta → Pestañas: qué se usa y qué no.' }
+  ] },
   { version:'1.5.0', fecha:'17 nov 2026', items:[
     { para:'todos',  texto:'Nueva pestaña «Propuestas»: cada jugador y cada fan puede proponer su once para la jornada, ver el de los demás y votarlo con 👍 o 👎. Las propuestas se ordenan por votos.' },
     { para:'mister', texto:'En «Propuestas» ves todas, las votadas arriba, y con «Usar esta» cargas una como tu once para retocarla y publicarla. Puedes borrar cualquiera y ocultar la pestaña desde Mi cuenta → Visibilidad.' }
@@ -3744,14 +3917,15 @@ class Component extends DCLogic {
     historicoLiga:[], jornadaFoto:null, quiniela:null, resultadosLiga:{}, ultimaHoraSel:null, propuestas:[], votosPropuesta:[], propBorrador:{ formacion:'1-2-3-1', once:{} }, propGrupo:'jugador', sinDeuda:null, visSub:'jugador', verResultadosLiga:false, resJornada:'todas', resEquipo:'todos',
     escudoAbierto:false, uso:null, usoCargando:false, usoAviso:'', fotosEquipacion:{},
     contadores:null, confeti:[], celebracion:null, arrastrando:null, vistaCampo:'2d', tabAnim:0, anuncio:null, jornadaHist:null, nombreTemporada:'', altaEmail:'', altaJugador:null, altaAviso:'', sugerencias:[], textoSugerencia:'', graciasSugerencia:false,
+    sinConexion:false, cacheDesde:null,
     mensajeGrupo:'', copiadoGrupo:false, resultadoAviso:'', confirmarBorrado:null,
     estadoAvisos:'default', appInstalada:false, pushIncompleto:false, avisoInstalar:'', resultadoEnvio:'', envioOk:false,
     destinoAviso:'todos', jugadorAviso:null, enviandoAviso:false, resumenAvisos:null, tituloAviso:'', cuerpoAviso:'', guiaSel:'ios',
     nuevaMultaTipo:'tarde', nuevaMultaJugador:null, nuevaMultaImporte:2, nuevaMultaNota:'',
     economia:ECONOMIA_POR_DEFECTO, editandoCaja:null, cobroJugador:null, cobroImporte:'', cobroConcepto:'cuota',
     seleccion:null, ficha:null,
-    orden:'goles', vistaStats:'tabla', jugadorSel:null, compClave:'goles', votoPorJornada:{}, notas:[], misNotas:{}, vistaConv:'fotos', vistaMvp:'votacion',
-    calVista:'lista', calMes:'todos', calJornada:'todas', rivalNum:null,
+    orden:'goles', ordenDir:'desc', vistaStats:'tabla', jugadorSel:null, compClave:'goles', votoPorJornada:{}, notas:[], misNotas:{}, vistaConv:'fotos', vistaMvp:'votacion',
+    calVista:'lista', calMes:'todos', calJornada:'todas', calCompleta:false, rivalNum:null,
     actaSel:null, actaAbierta:null,
     editandoCom:null, borradorCom:'', anulaciones:[], controlJornada:null, seguidoresMapa:null, subCuenta:'inicio', actividad:null, filtroActividad:'todos', verNovedades:false, novedadesPendientes:false,
     postTipo:'aviso', postTitulo:'', postTexto:'', postFoto:'', avisoFeed:'', borradores:{}, editandoPost:null, borradorPost:null, misReacciones:{},
@@ -3760,7 +3934,19 @@ class Component extends DCLogic {
   };
 
   componentDidMount() {
-    window.addEventListener('online', () => { if (this._reintentos) this.persistir(); });
+    // Actualización en vivo: la app vuelve a leer del servidor cada 45 s y al volver a ella.
+    // Nunca se refresca mientras el usuario toca o escribe, ni con un guardado en marcha,
+    // para no pisar lo que tiene entre manos.
+    this._interaccion = Date.now();
+    ['pointerdown', 'keydown', 'input', 'touchstart', 'wheel'].forEach(ev => window.addEventListener(ev, () => { this._interaccion = Date.now(); }, { passive:true }));
+    const libre = (seg) => this.state.loggedIn && this._cargado && !this._cargando && !this._enGuardado && !this.state.sinConexion
+      && document.visibilityState === 'visible' && (Date.now() - this._interaccion > seg * 1000);
+    setInterval(() => { if (libre(20)) this.traer(true); }, 45000);
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && libre(4)) this.traer(true); });
+    window.addEventListener('online', () => {
+      if (this.state.sinConexion && this.state.loggedIn) { this.traer(); return; }
+      if (this._reintentos) this.persistir();
+    });
     // Si viene de pulsar «Voy» en el aviso, la respuesta se guarda en
     // sessionStorage para que no se pierda ni pasando por el login.
     try {
@@ -3807,16 +3993,23 @@ class Component extends DCLogic {
     });
   }
 
-  async traer() {
-    if (this.bk && this.bk.sincronizarSuscripcion) {
+  /** Si jugamos en casa en esa jornada (por defecto, sí). */
+  casaDe(jornada) { const p = (this.state.partidos || []).find(x => x.num === jornada); return p ? p.casa !== false : true; }
+  /** Marcador siempre con el LOCAL primero. gf = nuestros goles, gc = los del rival. */
+  marcadorDe(jornada, gf, gc) { return this.casaDe(jornada) ? gf + ' - ' + gc : gc + ' - ' + gf; }
+
+  async traer(silencioso) {
+    if (!silencioso && this.bk && this.bk.sincronizarSuscripcion) {
       this.bk.sincronizarSuscripcion().then(() => {
         if (this.state.rol === 'mister' && this.bk.resumenAvisos) this.bk.resumenAvisos().then(r => { if (r) this.setState({ resumenAvisos:r }); });
       });
     }
-    const datos = await this.bk.cargar();
-    if (!datos) return;
+    const res = await this.bk.cargarConCache();
+    if (!res) return;
+    const datos = res.datos;
+    this.setState({ sinConexion: !!res.cache, cacheDesde: res.desde || null });
     delete datos.fans;
-    if (this.state.rol === 'mister') this.cargarFans();
+    if (!silencioso && this.state.rol === 'mister') this.cargarFans();
     if (!datos.clasificacion) delete datos.clasificacion;
     if (!datos.economia) delete datos.economia;
     if (!datos.fotosEquipacion) delete datos.fotosEquipacion;
@@ -3847,6 +4040,7 @@ class Component extends DCLogic {
     this.setState(datos, () => {
       this._cargando = false;
       this._cargado = true;
+      if (silencioso) return;
       const s = this.state;
       const eq = (this.state.clasificacion || []).find(x => x.nuestro) || {};
       const act = this.state.jugadores.filter(p => p.estado !== 'baja');
@@ -3896,7 +4090,7 @@ class Component extends DCLogic {
     // No se escribe nada hasta que la primera carga del servidor haya
     // terminado: si no, los valores en blanco del arranque se guardarían
     // encima de los datos reales.
-    if (!this.bk || !this.state.loggedIn || this._cargando || !this._cargado) return;
+    if (!this.bk || !this.state.loggedIn || this._cargando || !this._cargado || this.state.sinConexion) return;
     const hacerGuardado = async () => {
       try {
         const s = this.state;
@@ -4286,6 +4480,40 @@ class Component extends DCLogic {
 
   /** Jugador que apareció sin estar convocado: entra en el acta, cuenta para
    *  estadísticas y puede votar y ser votado en el MVP. */
+  async cargarPestanas() { const r = await this.bk.usoPestanas(); this.setState({ pestanasUso:r, pestanasCargadas:true }); }
+
+  /** Avisa a los jugadores que aún no han contestado la convocatoria. */
+  async recordarPendientes() {
+    const s = this.state, jor = this.jornada();
+    const p = s.partidos.find(x => x.num === jor); if (!p) return;
+    const est = this.estadosDe(jor);
+    const pend = s.jugadores.filter(j => j.estado !== 'baja' && j.email && !est[j.id]);
+    if (!pend.length) { this.setState({ avisoGuardado:'Todos han contestado.' }); return; }
+    this.setState({ avisoGuardado:'Enviando recordatorio a ' + pend.length + '…' });
+    let ok = 0, fallo = '';
+    for (const j of pend) {
+      const r = await this.bk.enviarAviso('⏰ ¿Vienes al partido?', 'Jornada ' + p.num + ' contra ' + p.rival + ' · ' + p.dia + ' de ' + p.mes.toLowerCase() + ' a las ' + p.hora + '. Contesta en la app.', j.id, { tipo:'convocatoria', jornada:p.num });
+      if (r && r.ok && (r.enviados || 0) > 0) ok++; else if (r && r.error) fallo = r.error;
+    }
+    this.setState({ avisoGuardado:'Recordatorio recibido en ' + ok + ' de ' + pend.length + ' jugadores' + (fallo ? '. ' + fallo : '.') });
+  }
+
+  /** El jugador no vino o no se presentó: sale del acta, del MVP y de las
+   *  estadísticas, y queda anotado quién lo hizo y cuándo. */
+  quitarDelActa(actaId, jid) {
+    const a = (this.state.actas || []).find(x => x.id === actaId);
+    const j = this.state.jugadores.find(x => x.id === jid);
+    if (!a || !j) return;
+    const reg = (a.registro || []).concat([{ jugador:j.nombre, jugador_id:jid, accion:'Quitado del acta (no vino o no se presentó)',
+      por: this.state.nombreSesion || 'Míster', cuando: new Date().toLocaleString('es-ES') }]);
+    const limpio = (a.eventos || []).filter(e => e.jugador !== j.nombre)
+      .map(e => Object.assign({}, e, { detalle: String(e.detalle || '').replace(new RegExp('\\s*·?\\s*asist\\.?\\s*' + j.nombre.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'), '') }));
+    this.patchActa(actaId, { minutos:(a.minutos || []).filter(m => m.id !== jid), eventos:limpio, registro:reg });
+    this.setEstado(a.jornada, jid, 'no');
+    this.setState({ avisoGuardado: j.nombre + ' fuera del acta. Revisa el marcador y los goles. Se recalculan las estadísticas.' });
+    setTimeout(() => this.recalcular(), 50);
+  }
+
   anadirUltimaHora(actaId) {
     const jid = this.state.ultimaHoraSel;
     if (!jid) return;
@@ -4356,50 +4584,68 @@ class Component extends DCLogic {
     return acc;
   }
 
-  /** Índice de rendimiento 0-100: nota, participación en goles,
-   *  minutos jugados y votos de MVP. */
-  rendimiento(j, votos, hasta) {
-    // Forma = tus ÚLTIMOS 3 partidos (el último pesa más), no toda la temporada.
+  /** Puntuación de UN partido (la referencia es 100, pero puede pasar):
+   *  9,5 × nota + podio MVP + goles y asistencias según el rol + ajuste de
+   *  portero − tarjetas − 2 por gol en propia. Los minutos no cuentan. */
+  puntuacionPartido(j, a, m) {
+    const esc = s => String(s).replace(/[.*+?^()|\[\]\\{}$]/g, '\\$&');
+    const ev = a.eventos || [];
+    const mio = ev.filter(e => e.jugador === j.nombre);
+    const goles = mio.filter(e => /gol/i.test(e.detalle) && !/propia/i.test(e.detalle)).length;
+    const asis = ev.filter(e => new RegExp('asist\\.?\\s*' + esc(j.nombre), 'i').test(e.detalle)).length;
+    const ta = mio.filter(e => /amarilla/i.test(e.detalle)).length;
+    const tr = mio.filter(e => /roja/i.test(e.detalle)).length;
+    const pp = mio.filter(e => /propia nuestro/i.test(e.detalle)).length;
+
+    // Rol de ese día. Una banda cuenta como carrilero salvo que el míster
+    // marque que jugó de banda ofensiva.
+    const rol = j.pos === 'BAN' ? (m.rolBanda === 'ofensiva' ? 'ofensiva' : 'carrilero') : j.pos;
+    const V = { DEL:[1, 1], MC:[2, 1], ofensiva:[2, 1], carrilero:[3, 2], DEF:[4, 3], POR:[4, 3] }[rol] || [2, 1];
+    const plus = goles * V[0] + asis * V[1];
+
+    // Podio: el guardado al cerrar la votación; en actas antiguas, solo el ganador.
+    const podio = a.podio ? (a.podio[j.id] || 0) : (a.mvp_id === j.id ? 5 : 0);
+
+    // Portero: según los goles que se le atribuyen. Con dos porteros y sin
+    // desglose en el acta, el ajuste es 0 para los dos.
+    let ajPor = 0;
+    if (j.pos === 'POR') {
+      const porteros = (a.minutos || []).filter(x => { const q = (this.state.jugadores || []).find(y => y.id === x.id); return q && q.pos === 'POR' && x.min > 0; });
+      const apunt = m.ge !== undefined && m.ge !== null && m.ge !== '';
+      let ge = null;
+      if (porteros.length <= 1) ge = apunt ? Number(m.ge) : (a.gc || 0);
+      else if (apunt) ge = Number(m.ge);
+      if (ge !== null) ajPor = ge === 0 ? 2 : ge === 1 ? 1 : ge === 2 ? 0 : ge === 3 ? -1 : -2;
+    }
+
+    // Tarjetas: amarilla −1, roja −4. Si la roja fue por doble amarilla, son −4 en total.
+    const taEf = tr > 0 && ta >= 2 ? ta - 2 : ta;
+    const desc = taEf * 1 + tr * 4;
+
+    return Math.max(0, 9.5 * (m.nota || 0) + podio + plus + ajPor - desc - 2 * pp);
+  }
+
+  /** Forma: últimos 3 partidos con nota (50/30/20), mezclados con la
+   *  trayectoria de la temporada cuando hay más de 3. Un partido sin nota
+   *  aún, o de menos de 10 minutos, no cuenta ni resta. */
+  juegosValorados(j, hasta) {
     const actas = [...(this.state.actas || [])].filter(a => !hasta || a.jornada <= hasta).sort((a, b) => b.jornada - a.jornada);
-    const juegos = [];
+    const out = [];
     for (const a of actas) {
       const m = (a.minutos || []).find(x => x.id === j.id);
-      if (m && m.min > 0) juegos.push({ a, m });
+      if (m && m.min >= 10 && m.nota > 0) out.push({ a, m });
     }
+    return out;
+  }
+
+  rendimiento(j, votos, hasta) {
+    const juegos = this.juegosValorados(j, hasta);
     if (!juegos.length) return 0;
-    const esc = s => String(s).replace(/[.*+?^()|\[\]\\{}$]/g, '\\$&');
-    const BASE = { DEF:.35, BAN:.25, MC:.15, DEL:0 };
-    const pesos = [.5, .3, .2].slice(0, Math.min(3, juegos.length));
-    const puntos = [];
-    const suma = pesos.reduce((s, x) => s + x, 0);
-    let total = 0;
-    juegos.forEach(({ a, m }, i) => {
-      const ev = a.eventos || [];
-      const mio = ev.filter(e => e.jugador === j.nombre);
-      const goles = mio.filter(e => /gol/i.test(e.detalle) && !/propia/i.test(e.detalle)).length;
-      const asis = ev.filter(e => new RegExp('asist\\.?\\s*' + esc(j.nombre), 'i').test(e.detalle)).length;
-      const ta = mio.filter(e => /amarilla/i.test(e.detalle)).length;
-      const tr = mio.filter(e => /roja/i.test(e.detalle)).length;
-      const pp = mio.filter(e => /propia nuestro/i.test(e.detalle)).length;
-      const nota = m.nota > 0 ? Math.min(1, m.nota / 10) : 0.65;
-      let partic;
-      if (j.pos === 'POR') {
-        const r = encajadosPorPortero(a, this.state.jugadores)[j.id] || { ge: a.gc || 0, p0: false };
-        partic = Math.min(1, Math.max(0, 1 - r.ge / 5) + (r.p0 ? .2 : 0));
-      } else {
-        partic = Math.min(1, (BASE[j.pos] || 0) + goles * .5 + asis * .35);
-      }
-      const minutos = Math.min(1, m.min / 35);
-      const mvp = a.mvp_id === j.id ? 1 : 0;
-      const disc = Math.max(0, 1 - (ta * .1 + tr * .35 + pp * .15));
-      const sc = nota * .40 + partic * .28 + minutos * .14 + mvp * .10 + disc * .08;
-      puntos.push(sc);
-      if (i < 3) total += sc * pesos[i];
-    });
-    // Forma = 65 % últimos 3 partidos + 35 % trayectoria de toda la temporada.
-    // Quien no juega no pierde forma: solo cuentan los partidos jugados.
-    const rec = total / suma, temp = puntos.reduce((s, x) => s + x, 0) / puntos.length;
-    return Math.round((juegos.length > 3 ? rec * 0.65 + temp * 0.35 : rec) * 100);
+    const pts = juegos.map(({ a, m }) => this.puntuacionPartido(j, a, m));
+    const w = { 1:[1], 2:[.625, .375], 3:[.5, .3, .2] }[Math.min(3, pts.length)];
+    const rec = w.reduce((s, x, i) => s + x * pts[i], 0);
+    const temp = pts.reduce((s, x) => s + x, 0) / pts.length;
+    return Math.round((pts.length > 3 ? rec * .7 + temp * .3 : rec) * 10) / 10;
   }
 
   async cargarDemo() {
@@ -4491,8 +4737,8 @@ class Component extends DCLogic {
           .map(e => esGolDeJugador(e.detalle) ? e.min + "' " + e.jugador : e.min + "' en propia del rival").join(', ');
         const gana = acta.gf > acta.gc, emp = acta.gf === acta.gc;
         base = { tipo:'resultado', fecha:hoyTexto(),
-          titulo: acta.gf + ' - ' + acta.gc + (gana ? ' y tres puntos' : emp ? ' y reparto' : ''),
-          texto: 'Jornada ' + acta.jornada + ' contra ' + acta.rival + '. ' + (goles ? 'Goles: ' + goles + '.' : 'Sin goles nuestros.') };
+          titulo: this.marcadorDe(acta.jornada, acta.gf, acta.gc) + (gana ? ' y tres puntos' : emp ? ' y reparto' : ''),
+          texto: 'Jornada ' + acta.jornada + ': ' + (this.casaDe(acta.jornada) ? 'Perro Sanse ' + acta.gf + ' - ' + acta.gc + ' ' + acta.rival : acta.rival + ' ' + acta.gc + ' - ' + acta.gf + ' Perro Sanse') + '. ' + (goles ? 'Goles: ' + goles + '.' : 'Sin goles nuestros.') };
       }
 
       if (que !== 'acta' && !p) {
@@ -4848,9 +5094,9 @@ class Component extends DCLogic {
         fechaLarga: diaSemana(j.dia, j.mes, TEMPORADA) + ' ' + j.dia + ' de ' + j.mes.toLowerCase(),
         localia: j.casa ? 'Local' : 'Fuera',
         enfrentamiento: j.casa ? 'Perro Sanse vs ' + j.rival : j.rival + ' vs Perro Sanse',
-        resultado: jugado ? j.gf + ' - ' + j.gc : 'Por jugar',
+        resultado: jugado ? this.marcadorDe(j.num, j.gf, j.gc) : 'Por jugar',
         rivalInicial: this.siglaSiNoHayEscudo(j.rival, iniciales(j.rival)), rivalBadge: this.badgeEquipo(j.rival, d.r.color, 34),
-        rivalBadgeGrande: this.badgeEquipo(j.rival, d.r.color, 56), nuestroBadgeGrande: this.badgeEquipo('Perro Sanse', '#FF2E88', 56),
+        rivalBadgeGrande: this.badgeEquipo(j.rival, d.r.color, 56) + ';order:' + (j.casa ? 2 : 0), nuestroBadgeGrande: this.badgeEquipo('Perro Sanse', '#FF2E88', 56) + ';order:' + (j.casa ? 0 : 2),
         campoInicial: c.nombre.charAt(0), campoBadge: this.badge('', c.color, 26),
         maps: this.mapsDe(c),
         pista: j.pista || '',
@@ -4932,6 +5178,12 @@ class Component extends DCLogic {
       roleLabel: admin ? 'Míster' : esFan ? 'Fan' : 'Jugador',
       rolePillStyle: 'font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:12px;letter-spacing:.1em;text-transform:uppercase;padding:8px 14px;border-radius:999px;background:' + (admin ? ac : esFan ? '#2FA8A0' : '#1C1C22') + ';color:' + (admin || esFan ? '#0B0B0D' : '#C9C9D2'),
       appVersion: 'v' + APP_VERSION,
+      haySinConexion: !!st.sinConexion,
+      textoSinConexion: (() => {
+        const t = st.cacheDesde ? new Date(st.cacheDesde).toLocaleString('es-ES', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '';
+        return 'Sin conexión · estás viendo la última versión guardada' + (t ? ' (' + t + ')' : '') + '. No se puede editar hasta que vuelva la red.';
+      })(),
+      reintentarRed: () => this.traer(),
       abrirNovedades: () => this.setState({ verNovedades:true }),
       // El aviso de novedades espera a que el jugador haya contestado la
       // convocatoria: nunca se pisan dos ventanas a la vez.
@@ -4953,7 +5205,7 @@ class Component extends DCLogic {
       tabs: TABS.filter(([k]) => tabsPermitidas.indexOf(k) !== -1 && !tabOculta(k)
           && (k !== 'caja' || this.visible('caja'))
           && (k !== 'stats' || this.visible('estadisticas'))
-          && (k !== 'liga' || this.visible('clasificacion'))).map(([k, label]) => ({ label, style:this.tabBtn(st.tab === k), go:() => this.setState({ tab:k, tabAnim: st.tabAnim + 1 }) })),
+          && (k !== 'liga' || this.visible('clasificacion'))).map(([k, label]) => ({ label, style:this.tabBtn(st.tab === k), go:() => { if (this.bk && !admin && this.bk.registrarPestana) this.bk.registrarPestana(k); this.setState({ tab:k, tabAnim: st.tabAnim + 1 }); } })),
 
       esPanel:st.tab === 'panel', esFeed:st.tab === 'feed', esPlantilla:st.tab === 'plantilla',
       esConvocatoria:st.tab === 'convocatoria', esAlineacion:st.tab === 'alineacion', esCalendario:st.tab === 'calendario',
@@ -5095,7 +5347,7 @@ class Component extends DCLogic {
         const mvp = JUG.find(x => x.id === a.mvp_id);
         const gana = a.gf > a.gc, emp = a.gf === a.gc;
         return {
-          jornada:a.jornada, rival:a.rival, fecha:a.fecha, marcador:a.gf + ' - ' + a.gc,
+          jornada:a.jornada, rival:a.rival, fecha:a.fecha, marcador:this.marcadorDe(a.jornada, a.gf, a.gc),
           abierta: st.jornadaHist === a.jornada,
           chevron: st.jornadaHist === a.jornada ? '−' : '+',
           toggle: () => this.setState(s => ({ jornadaHist: s.jornadaHist === a.jornada ? null : a.jornada })),
@@ -5269,6 +5521,23 @@ class Component extends DCLogic {
       textoDeshacer: st.deshacer ? 'Deshacer ' + st.deshacer.que : '',
       deshacer: () => this.deshacerUltimo(),
       descartarDeshacer: () => this.setState({ deshacer:null }),
+      recordarPendientes: () => this.recordarPendientes(),
+      resumenJornada: (() => {
+        if (!admin || !prox || !st.partidos.length) return [];
+        const prev = prox.num - 1, ap = prev >= 1 ? st.actas.find(a => a.jornada === prev) : null;
+        const est = this.estadosDe(prox.num), ali = this.aliDe(prox.num);
+        const pend = JUG.filter(p => p.estado !== 'baja' && !est[p.id]).length;
+        const onceN = Object.keys(ali.once || {}).length;
+        const it = (txt, ok) => ({ txt, ok, style: this.pill(ok ? '#2FA8A022' : '#F5C51822', ok ? '#2FA8A0' : '#F5C518', ok ? '#2FA8A0' : '#F5C518'), icono: ok ? '✓' : '•' });
+        const out = [it('Convocatoria J' + prox.num + ': ' + (pend ? 'faltan ' + pend + ' por contestar' : 'todos han contestado'), pend === 0),
+          it('Alineación J' + prox.num + ': ' + onceN + '/7 puestos', onceN >= 7)];
+        if (prev >= 1) out.push(it('Acta J' + prev, !!ap), it('MVP J' + prev + (ap && ap.mvp_id ? ' cerrado' : ' sin cerrar'), !!(ap && ap.mvp_id)),
+          it('Clasificación J' + prev + (st.historicoLiga.some(h => h.jornada === prev) ? ' guardada' : ' sin guardar'), st.historicoLiga.some(h => h.jornada === prev)));
+        const mp = (st.multas || []).filter(m => !m.pagada).length;
+        out.push(it(mp ? mp + ' multa(s) sin cobrar' : 'Sin multas pendientes', mp === 0));
+        return out;
+      })(),
+      hayResumen: admin && !!prox && st.partidos.length > 0,
       // ---- Última hora en el acta ----
       hayUltimaHora: !!acta && !(st.actaCerrada),
       ultimaHoraSel: st.ultimaHoraSel || '',
@@ -5349,10 +5618,34 @@ class Component extends DCLogic {
             autor:p.autor, formacion:p.formacion, up, down, score:up - down, esMia, puedeVotar:!esMia,
             puedeBorrar: admin || esMia, puedeUsar: admin,
             upStyle: btn(mio && mio.valor === 1, '#2FA8A0'), downStyle: btn(mio && mio.valor === -1, '#E4404A'),
-            once: (FORMACIONES[p.formacion] || FORMACIONES['1-2-3-1']).map((s, i) => {
-              const j = JUG.find(x => x.id === (p.once || {})[i]);
-              return { rol: POS[s.rol] || s.rol, nombre: j ? j.nombre : '—', dorsal: j ? j.dorsal : '', colStyle:'color:' + (POS_COLOR[s.rol] || '#8A8A96') };
-            }),
+            campoStyle:'position:relative;aspect-ratio:3/4;max-height:340px;width:100%;margin-top:12px;border-radius:14px;overflow:hidden;border:1px solid #1F3A2C;background:repeating-linear-gradient(180deg,rgba(255,255,255,.03) 0 28px,transparent 28px 56px),linear-gradient(180deg,#0E2A1E,#0A1F16)',
+            fichas: (() => {
+              const slots = FORMACIONES[p.formacion] || FORMACIONES['1-2-3-1'];
+              return slots.map((s, i) => {
+                const j = JUG.find(x => x.id === (p.once || {})[i]);
+                const fuera = !!j && (POS_ENCAJA[s.rol] || [s.rol]).indexOf(j.pos) === -1;
+                const noConv = !!j && estadosJ[j.id] !== 'si';
+                return { nombre: j ? j.nombre : POS[s.rol], iniciales: j && !j.foto ? iniciales(j.nombre) : '',
+                  aviso: fuera ? POS[j.pos] : noConv ? 'no convocado' : '',
+                  avatarStyle: this.avatar(j || null, 38) + ';border-color:' + (fuera || noConv ? '#F5C518' : (POS_COLOR[s.rol] || '#FF2E88')) + (j ? '' : ';opacity:.4'),
+                  style:'position:absolute;left:' + s.x + '%;top:' + s.y + '%;transform:translate(-50%,-50%);text-align:center;width:66px' };
+              });
+            })(),
+            datos: (() => {
+              const slots = FORMACIONES[p.formacion] || FORMACIONES['1-2-3-1'];
+              const ids = slots.map((s, i) => (p.once || {})[i]).filter(Boolean);
+              const js = ids.map(id => JUG.find(x => x.id === id)).filter(Boolean);
+              const formaM = js.length ? Math.round(js.reduce((s, j) => s + this.rendimiento(j, votosPorJugador[j.id]), 0) / js.length) : 0;
+              const coincide = ids.filter(id => Object.values(aliJ.once || {}).indexOf(id) !== -1).length;
+              const fuera = slots.filter((s, i) => { const j = JUG.find(x => x.id === (p.once || {})[i]); return j && (POS_ENCAJA[s.rol] || [s.rol]).indexOf(j.pos) === -1; }).length;
+              const noConv = js.filter(j => estadosJ[j.id] !== 'si').length;
+              const chip = (txt, col) => ({ txt, style: this.pill(col + '22', col, col) });
+              const out = [chip('📈 Forma media ' + (formaM || '—'), '#2FA8A0'), chip('🤝 Coincide con el once oficial en ' + coincide + '/' + slots.length, '#3D8BFD')];
+              if (fuera) out.push(chip('⚠ ' + fuera + ' fuera de posición', '#F5C518'));
+              if (noConv) out.push(chip('🚫 ' + noConv + ' sin convocar', '#E4404A'));
+              return out;
+            })(),
+            aprobStyle:'height:100%;width:' + ((up + down) ? Math.round(up / (up + down) * 100) : 0) + '%;background:#2FA8A0;border-radius:6px;transition:width 1s cubic-bezier(.22,.9,.25,1)',
             votarArriba: () => { if (!esMia) this.votarProp(p.id, mio && mio.valor === 1 ? 0 : 1); },
             votarAbajo: () => { if (!esMia) this.votarProp(p.id, mio && mio.valor === -1 ? 0 : -1); },
             editar: () => this.setState({ propBorrador:{ formacion:p.formacion, once:Object.assign({}, p.once || {}) } }),
@@ -5362,7 +5655,7 @@ class Component extends DCLogic {
               if (!r.ok) { this.setState({ avisoGuardado:'No se pudo borrar: ' + r.error }); return; }
               this.setState(s => ({ propuestas: (s.propuestas || []).filter(x => x.id !== p.id) })); }
           };
-        }).sort((a, c) => c.score - a.score);
+        }).sort((a, c) => c.score - a.score).map((x, i) => Object.assign(x, { insignia: i === 0 && x.score > 0 }));
       })(),
       sinPropuestas: !(st.propuestas || []).some(p => p.jornada === jornadaSel && p.rol === (st.propGrupo || 'jugador')),
 
@@ -5415,14 +5708,38 @@ class Component extends DCLogic {
       sinFansAun: (st.listaFansRaw || []).length === 0,
       // ---- Mi cuenta en subsecciones (solo el míster tiene menú) ----
       menuCuenta: [['inicio','🏠 Inicio'],['actividad','📊 Actividad'],['comunidad','👥 Comunidad'],
-        ['visibilidad','👁 Visibilidad'],['recursos','📦 Recursos'],['pruebas','🧪 Pruebas']]
+        ['visibilidad','👁 Visibilidad'],['recursos','📦 Recursos'],['pestanas','📈 Pestañas'],['pruebas','🧪 Pruebas']]
         .map(([k, label]) => ({ label, style:this.tabBtn((st.subCuenta || 'inicio') === k),
-          go:() => { this.setState({ subCuenta:k }); if (k === 'actividad' && !st.actividad) this.cargarActividad(); } })),
+          go:() => { this.setState({ subCuenta:k }); if (k === 'actividad' && !st.actividad) this.cargarActividad(); if (k === 'pestanas') this.cargarPestanas(); } })),
       subInicio: !admin || (st.subCuenta || 'inicio') === 'inicio',
       subActividad: admin && st.subCuenta === 'actividad',
       subComunidad: admin && st.subCuenta === 'comunidad',
       subVisibilidad: admin && st.subCuenta === 'visibilidad',
       subRecursos: admin && st.subCuenta === 'recursos',
+      subPestanas: admin && st.subCuenta === 'pestanas',
+      pestanasCargadas: !!st.pestanasCargadas,
+      pestanasUsuarios: new Set((st.pestanasUso || []).map(r => r.perfil_id)).size,
+      pestanasTotal: (st.pestanasUso || []).length,
+      pestanasStats: (() => {
+        const rows = st.pestanasUso || [], map = {};
+        rows.forEach(r => { const m = map[r.tab] = map[r.tab] || { n:0, u:{} }; m.n++; m.u[r.perfil_id] = 1; });
+        const max = Math.max(1, ...Object.keys(map).map(k => map[k].n));
+        return TABS.map(([k, l]) => { const m = map[k] || { n:0, u:{} };
+          return { label:l, n:m.n, usuarios:Object.keys(m.u).length, nadie: m.n === 0,
+            barStyle:'height:100%;border-radius:6px;transition:width 1s ease;background:' + (m.n ? '#2FA8A0' : '#33333D') + ';width:' + Math.round(m.n / max * 100) + '%' }; })
+          .sort((a, c) => c.n - a.n);
+      })(),
+      recargarPestanas: () => this.cargarPestanas(),
+      copiaSeguridad: async () => {
+        this.setState({ avisoGuardado:'Preparando la copia…' });
+        const d = await this.bk.copiaSeguridad();
+        if (!d) { this.setState({ avisoGuardado:'No se pudo preparar la copia.' }); return; }
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([JSON.stringify(d, null, 1)], { type:'application/json' }));
+        a.download = 'copia-perro-sanse-' + new Date().toISOString().slice(0, 10) + '.json';
+        document.body.appendChild(a); a.click(); a.remove();
+        this.setState({ avisoGuardado:'Copia descargada. Guárdala en un sitio seguro.' });
+      },
       subPruebas: admin && st.subCuenta === 'pruebas',
 
       // ---- Actividad de uso ----
@@ -5550,7 +5867,7 @@ class Component extends DCLogic {
       misGf: (st.contadores || {}).gf != null ? st.contadores.gf : miEquipo.gf,
       misGc: (st.contadores || {}).gc != null ? st.contadores.gc : miEquipo.gc,
       topForma: [...activos].map(p => ({ p, v:this.rendimiento(p, votosPorJugador[p.id]) }))
-        .sort((a, b) => b.v - a.v).slice(0, 3).map(({ p, v }) => ({
+        .sort((a, b) => b.v - a.v).slice(0, 5).map(({ p, v }) => ({
           nombre:p.nombre, valor:v || '—',
           iniciales: p.foto ? '' : iniciales(p.nombre), avatarStyle: this.avatar(p, 26),
           valorStyle: 'font-family:Anton,sans-serif;font-size:16px;color:' + (v >= 75 ? '#2FA8A0' : v >= 50 ? '#F5C518' : '#8A8A96')
@@ -5568,7 +5885,8 @@ class Component extends DCLogic {
             barGf: barra((a.gf || 0) / maxG, '#2FA8A0'), tituloGf: (a.gf || 0) + ' goles a favor',
             barGc: barra((a.gc || 0) / maxG, '#E4404A'), tituloGc: (a.gc || 0) + ' goles en contra',
             barNota: barra(media / 10, '#F5C518'), tituloNota: 'Nota media ' + (media ? media.toFixed(1) : '—'),
-                  res: a.gf + '-' + a.gc,
+            notaTxt: media ? '⭐ ' + media.toFixed(1) : '',
+                  res: this.marcadorDe(a.jornada, a.gf, a.gc).replace(' - ', '-'),
             resStyle: 'font-family:Anton,sans-serif;font-size:13px;color:' + (gana ? '#2FA8A0' : emp ? '#EDEDF2' : '#E4404A')
           };
         });
@@ -5581,8 +5899,8 @@ class Component extends DCLogic {
       asisTotales: (st.contadores || {}).asis != null ? st.contadores.asis : activos.reduce((s, p) => s + p.asis, 0),
       flechaLiga: flecha(miEquipo.pos_ant, TABLA_LIGA.indexOf(miEquipo) + 1).icono,
       flechaLigaStyle: 'font-size:18px;margin-left:8px;color:' + flecha(miEquipo.pos_ant, TABLA_LIGA.indexOf(miEquipo) + 1).color,
-      topGoles: [...activos].sort((a, b) => b.goles - a.goles).slice(0, 4).map((p, i) => ({ pos:i + 1, nombre:p.nombre, goles:p.goles, iniciales: p.foto ? '' : iniciales(p.nombre), avatarStyle: this.avatar(p, 30) })),
-      topAsis: [...activos].sort((a, b) => b.asis - a.asis).slice(0, 4).map((p, i) => ({ pos:i + 1, nombre:p.nombre, asis:p.asis, iniciales: p.foto ? '' : iniciales(p.nombre), avatarStyle: this.avatar(p, 30) })),
+      topGoles: [...activos].sort((a, b) => b.goles - a.goles).slice(0, 5).map((p, i) => ({ pos:i + 1, nombre:p.nombre, goles:p.goles, iniciales: p.foto ? '' : iniciales(p.nombre), avatarStyle: this.avatar(p, 30) })),
+      topAsis: [...activos].sort((a, b) => b.asis - a.asis).slice(0, 5).map((p, i) => ({ pos:i + 1, nombre:p.nombre, asis:p.asis, iniciales: p.foto ? '' : iniciales(p.nombre), avatarStyle: this.avatar(p, 30) })),
       avisos: st.avisos,
 
       popupAbierto: st.popup && esJugador && !st.forzarPass,
@@ -5835,12 +6153,18 @@ class Component extends DCLogic {
           posStyle: 'display:inline-block;margin-top:6px;font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:12px;letter-spacing:.1em;text-transform:uppercase;padding:4px 10px;border-radius:999px;background:' + POS_COLOR[p.pos] + '22;color:' + POS_COLOR[p.pos] + ';border:1px solid ' + POS_COLOR[p.pos],
           fisico: (p.edad ? ' · ' + p.edad + ' años' : '') + (p.altura ? ' · ' + p.altura + ' cm' : ''),
           forma: this.rendimiento(p, votosPorJugador[p.id]) || '—',
+          formaDesde: (() => {
+            const js = this.juegosValorados(p);
+            if (!js.length) return 'Sin datos';
+            const u = js[0].a;
+            return 'Último valorado: J' + u.jornada + (u.fecha ? ' · ' + u.fecha : '');
+          })(),
           ...(() => {
             const hasta = previas.length ? previas[previas.length - 1].jornada : 0;
             const antes = hasta ? this.rendimiento(p, votosPorJugador[p.id], hasta) : 0;
             const ahora = this.rendimiento(p, votosPorJugador[p.id]);
             if (!antes || !ahora) return { hayDelta:false, delta:'', deltaStyle:'' };
-            const d = ahora - antes;
+            const d = Math.round((ahora - antes) * 10) / 10;
             return { hayDelta:true, delta: antes + ' ' + (d >= 0 ? '▲ +' : '▼ ') + d,
               deltaStyle: 'color:' + (d > 0 ? '#2FA8A0' : d < 0 ? '#E4404A' : '#8A8A96') };
           })(),
@@ -5872,6 +6196,22 @@ class Component extends DCLogic {
           },
           setFoto: e => leerFoto(e, 'foto'),
           setRecorte: e => leerFoto(e, 'recorte'),
+          mvps: st.actas.filter(a => a.mvp_id === p.id).length,
+          evol: (() => {
+            const js = this.juegosValorados(p).reverse();
+            if (js.length < 2) return { hay:false, nodos:[], d:'', etiquetas:[], max:100 };
+            const vals = js.map(({ a, m }) => ({ j:a.jornada, rival:a.rival, res:this.marcadorDe(a.jornada, a.gf, a.gc).replace(' - ', '-'), casa:this.casaDe(a.jornada), v:this.puntuacionPartido(p, a, m) }));
+            const max = Math.max(100, Math.ceil(Math.max.apply(null, vals.map(x => x.v)) / 10) * 10);
+            const X = i => 4 + (i / (vals.length - 1)) * 92, Y = v => 36 - (v / max) * 32;
+            return { hay:true, max, d: vals.map((x, i) => (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(x.v).toFixed(1)).join(' '),
+              nodos: vals.map((x, i) => ({ cx:X(i).toFixed(1), cy:Y(x.v).toFixed(1), titulo:'J' + x.j + ' · ' + (x.casa ? 'Sanse ' + x.res + ' ' + x.rival : x.rival + ' ' + x.res + ' Sanse') + ' · ' + x.v.toFixed(1) + ' pts' })),
+              etiquetas: vals.map(x => ({ t:'J' + x.j, v:x.v.toFixed(0) })) };
+          })(),
+          ultimos: [...st.actas].sort((a, c) => c.jornada - a.jornada).filter(a => (a.minutos || []).some(m => m.id === p.id)).slice(0, 5).map(a => {
+            const m = a.minutos.find(x => x.id === p.id);
+            const rs = this.marcadorDe(a.jornada, a.gf, a.gc).replace(' - ', '-');
+            return { j:'J' + a.jornada, rival: this.casaDe(a.jornada) ? 'Sanse ' + rs + ' ' + a.rival : a.rival + ' ' + rs + ' Sanse', res:'', min:m.min, nota:m.nota || 'Pend.', tarde:!!m.ultimaHora };
+          }),
           campos: NUMERICOS.map(([k, label]) => ({ k:label, v:p[k], set:e => this.patchJugador(p.id, { [k]:this.num(e.target.value) }) })),
           stats: NUMERICOS.map(([k, label]) => ({ k:label, v:p[k] })).concat([{ k:'Min/PJ', v:p.pj ? Math.round(p.min / p.pj) : 0 }])
         };
@@ -5885,7 +6225,7 @@ class Component extends DCLogic {
         const col = e === 'si' ? ac : e === 'duda' ? '#2FA8A0' : e === 'pendiente' ? '#5A5A66' : '#3A3A44';
         return {
           dorsal:p.dorsal, nombre:p.nombre, pos:p.pos,
-          iniciales: p.foto ? '' : iniciales(p.nombre), avatarStyle: this.avatar(p, 62),
+          iniciales: p.foto ? '' : iniciales(p.nombre), avatarStyle: this.avatar(p, 62), avatarMini: this.avatar(p, 36),
           toggle: () => { if (!admin) return; this.setEstado(jornadaSel, p.id, { si:'duda', duda:'no', no:'si', fuera:'si', pendiente:'si' }[e]); },
           rowStyle:'display:flex;align-items:center;padding:10px 12px;border-radius:12px;background:#141419;border:1px solid ' + (e === 'si' ? col : '#22222A') + ';cursor:' + (admin ? 'pointer' : 'default') + ';opacity:' + (e === 'no' || e === 'fuera' ? '.45' : '1'),
           gridStyle:'display:flex;flex-direction:column;align-items:center;text-align:center;padding:14px 8px;border-radius:14px;background:#141419;border:1px solid ' + (e === 'si' ? col : '#22222A') + ';cursor:' + (admin ? 'pointer' : 'default') + ';transition:transform .22s cubic-bezier(.22,.9,.25,1),box-shadow .22s ease;--brillo:' + col + ';opacity:' + (e === 'no' || e === 'fuera' ? '.45' : '1'),
@@ -6038,7 +6378,29 @@ class Component extends DCLogic {
       vistasCal: [['lista','Lista'],['agenda','Agenda']].map(([k, label]) => ({ label, style:this.tabBtn(st.calVista === k), go:() => this.setState({ calVista:k }) })),
       calVistaLista: st.calVista === 'lista', calVistaAgenda: st.calVista === 'agenda',
       calMes: st.calMes, setCalMes: e => this.setState({ calMes:e.target.value }),
-      calJornada: st.calJornada, setCalJornada: e => this.setState({ calJornada:e.target.value }),
+      calJornada: st.calJornada, setCalJornada: e => this.setState({ calJornada:e.target.value, calCompleta:false }),
+      hayJornadaElegida: st.calJornada !== 'todas',
+      hayCompleta: !!st.calCompleta && st.calJornada !== 'todas',
+      textoCompleta: st.calCompleta ? '✕ Cerrar jornada completa' : '📋 Ver jornada completa',
+      toggleCompleta: () => this.setState(s => ({ calCompleta: !s.calCompleta })),
+      jornadaCompleta: (() => {
+        if (!st.calCompleta || st.calJornada === 'todas') return [];
+        const n = parseInt(st.calJornada, 10), cal = CAL_LIGA.find(x => x.n === n);
+        if (!cal) return [];
+        const guard = (st.resultadosLiga || {})[n] || [];
+        const NOS = this.nombreNuestro();
+        const info = nom => { const i = TABLA_LIGA.findIndex(e => e.nombre === nom); const e = TABLA_LIGA[i];
+          return hayJornadasLiga && e ? (i + 1) + 'º · ' + pts(e) + ' pts' : ''; };
+        return cal.p.map(([l, v]) => {
+          const ln = equipoLiga(l, TABLA_LIGA), vn = equipoLiga(v, TABLA_LIGA);
+          const r = guard.find(x => x.local === ln && x.visita === vn);
+          const nuestro = ln === NOS || vn === NOS;
+          return { local: ln, visita: vn, jugado: !!r,
+            localBadge: this.badgeEquipo(ln, eqLiga(TABLA_LIGA, ln).color, 44), localSigla: this.siglaSiNoHayEscudo(ln, siglaEquipo(ln, TABLA_LIGA.map(x => x.nombre))),
+            visitaBadge: this.badgeEquipo(vn, eqLiga(TABLA_LIGA, vn).color, 44), visitaSigla: this.siglaSiNoHayEscudo(vn, siglaEquipo(vn, TABLA_LIGA.map(x => x.nombre))), marcador: r ? r.gl + ' - ' + r.gv : 'vs', infoL: info(ln), infoV: info(vn),
+            rowStyle:'display:flex;align-items:center;gap:12px;background:' + (nuestro ? 'rgba(255,46,136,.10)' : '#16161C') + ';border:1px solid ' + (nuestro ? '#FF2E88' : '#24242C') + ';border-radius:12px;padding:10px 12px' };
+        });
+      })(),
       opcionesMes: [{ v:'todos', label:'Todos los meses' }].concat(st.partidos.reduce((acc, p) => { if (!acc.some(x => x.v === p.mes)) acc.push({ v:p.mes, label:p.mes }); return acc; }, [])),
       opcionesJornada: [{ v:'todas', label:'Todas las jornadas' }].concat(st.partidos.map(p => ({ v:String(p.num), label:'Jornada ' + p.num }))),
       calendario: filtrados.map(partidoRow),
@@ -6090,7 +6452,12 @@ class Component extends DCLogic {
           const col = gana ? '#2FA8A0' : emp ? '#8A8A96' : '#E4404A';
           return 'font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:12px;letter-spacing:.14em;text-transform:uppercase;padding:5px 12px;border-radius:999px;background:' + col + '22;color:' + col + ';border:1px solid ' + col;
         })(),
-        jornada:acta.jornada, rival:acta.rival, fecha:acta.fecha, marcador:acta.gf + ' - ' + acta.gc,
+        jornada:acta.jornada, rival:acta.rival, fecha:acta.fecha, marcador:this.marcadorDe(acta.jornada, acta.gf, acta.gc),
+        ordenNuestro: this.casaDe(acta.jornada) ? 0 : 2, ordenRival: this.casaDe(acta.jornada) ? 2 : 0,
+        localiaTxt: this.casaDe(acta.jornada) ? 'Jugamos en casa' : 'Jugamos fuera',
+        izqVal: this.casaDe(acta.jornada) ? acta.gf : acta.gc, derVal: this.casaDe(acta.jornada) ? acta.gc : acta.gf,
+        setIzq: e => this.patchActa(acta.id, this.casaDe(acta.jornada) ? { gf:this.num(e.target.value) } : { gc:this.num(e.target.value) }),
+        setDer: e => this.patchActa(acta.id, this.casaDe(acta.jornada) ? { gc:this.num(e.target.value) } : { gf:this.num(e.target.value) }),
         gf:acta.gf, gc:acta.gc, inicial:this.siglaSiNoHayEscudo(acta.rival, iniciales(acta.rival)),
         rivalBadge: this.badgeEquipo(acta.rival, eqLiga(TABLA_LIGA, acta.rival).color, 64),
         setGf: e => this.patchActa(acta.id, { gf:this.num(e.target.value) }),
@@ -6107,7 +6474,7 @@ class Component extends DCLogic {
           }) });
           this.setState({ avisoGuardado:'Minutos repartidos: ' + rep.minCampo + "' cada jugador de campo" + (rep.nPor ? ' y ' + rep.minPor + "' cada portero." : '.') + ' Ajusta a mano lo que haga falta y recalcula.' });
         },
-        addEvento: () => this.patchActa(acta.id, { eventos: acta.eventos.concat([{ min:0, jugador:JUG[0].nombre, detalle:'Gol' }]) }),
+        addEvento: () => this.patchActa(acta.id, { eventos: acta.eventos.concat([{ min:0, jugador:(porDorsal(JUG.filter(j => (acta.minutos || []).some(m => m.id === j.id)))[0] || JUG[0]).nombre, detalle:'Gol' }]) }),
         eventos: acta.eventos.map((ev, i) => {
           const t = (ev.detalle || '').toLowerCase();
           const pn = /propia nuestro/.test(t);
@@ -6144,7 +6511,7 @@ class Component extends DCLogic {
             const base = (ev.detalle || 'Gol').split(/\s*·\s*asist/i)[0].trim() || 'Gol';
             this.patchActa(acta.id, { eventos: acta.eventos.map((x, j) => j === i ? Object.assign({}, x, { detalle: v ? base + ' · asist. ' + v : base }) : x) });
           },
-          opcionesAsistente: [{ v:'', label:'Sin asistencia' }].concat(porDorsal(JUG).filter(p => p.nombre !== ev.jugador).map(p => ({ v:p.nombre, label:p.dorsal + ' · ' + p.nombre }))),
+          opcionesAsistente: [{ v:'', label:'Sin asistencia' }].concat(porDorsal(JUG.filter(j => (acta.minutos || []).some(m => m.id === j.id))).filter(p => p.nombre !== ev.jugador).map(p => ({ v:p.nombre, label:p.dorsal + ' · ' + p.nombre }))),
           setMin: e => this.patchActa(acta.id, { eventos: acta.eventos.map((x, j) => j === i ? Object.assign({}, x, { min:this.num(e.target.value) }) : x) }),
           setJugador: e => this.patchActa(acta.id, { eventos: acta.eventos.map((x, j) => j === i ? Object.assign({}, x, { jugador:e.target.value }) : x) }),
           setDetalle: e => this.patchActa(acta.id, { eventos: acta.eventos.map((x, j) => j === i ? Object.assign({}, x, { detalle:e.target.value }) : x) }),
@@ -6157,6 +6524,9 @@ class Component extends DCLogic {
           const apuntado = m.ge !== undefined && m.ge !== null && m.ge !== '';
           return { nombre:p.nombre, min:m.min, nota:m.nota, tarde: !!m.ultimaHora,
             esPortero,
+            esBanda: p.pos === 'BAN', rolBanda: m.rolBanda || 'carrilero', notaTxt: m.nota > 0 ? m.nota : 'Pend.',
+            rolStyle: 'background:#16161C;border:1px solid #2FA8A0;border-radius:8px;padding:6px 4px;color:#2FA8A0;font-size:12px;font-weight:600',
+            setRolBanda: e => { const v = e.target.value; this.patchActa(acta.id, { minutos: acta.minutos.map((x, j) => j === i ? Object.assign({}, x, { rolBanda: v }) : x) }); },
             ge: apuntado ? m.ge : '',
             gePlaceholder: reparto ? '🥅 ' + reparto.ge : '🥅',
             geTexto: reparto ? reparto.ge + ' encajados' : '',
@@ -6169,6 +6539,7 @@ class Component extends DCLogic {
               const c = m.nota >= 7.5 ? '#2FA8A0' : m.nota >= 6 ? '#F5C518' : m.nota > 0 ? '#E4404A' : '#5A5A66';
               return 'width:56px;box-sizing:border-box;background:' + c + '22;border:1px solid ' + c + ';border-radius:8px;padding:6px 4px;color:' + c + ';font-family:Anton,sans-serif;font-size:15px;text-align:center';
             })(),
+            noVino: () => this.quitarDelActa(acta.id, m.id),
             setMin: e => this.patchActa(acta.id, { minutos: acta.minutos.map((x, j) => j === i ? Object.assign({}, x, { min:this.num(e.target.value) }) : x) }),
             setNota: e => {
               const txt = String(e.target.value).replace(',', '.').replace(/[^0-9.]/g, '');
@@ -6178,7 +6549,14 @@ class Component extends DCLogic {
             } };
         })
       },
-      nombresJugadores: JUG.map(p => ({ v:p.nombre })),
+      nombresJugadores: (() => {
+        const ids = acta ? (acta.minutos || []).map(m => m.id) : [];
+        const lista = porDorsal(JUG.filter(j => ids.indexOf(j.id) !== -1)).map(j => ({ v:j.nombre, label:j.dorsal + ' · ' + j.nombre }));
+        (acta ? (acta.eventos || []) : []).forEach(e => { if (e.jugador && !lista.some(x => x.v === e.jugador)) lista.push({ v:e.jugador, label:e.jugador }); });
+        return lista;
+      })(),
+      hayRegistroActa: admin && !!acta && (acta.registro || []).length > 0,
+      registroActa: acta ? (acta.registro || []).map(r => ({ texto: r.jugador + ' · ' + r.accion, por: r.por, cuando: r.cuando })) : [],
       actasAnteriores: st.actas.filter(a => a.id !== (acta || {}).id).map(a => ({
         borrar: async () => {
           if (!admin) return;
@@ -6187,7 +6565,7 @@ class Component extends DCLogic {
           this.setState(s => ({ actas: s.actas.filter(x => x.id !== a.id),
             avisoGuardado:'Acta de la jornada ' + a.jornada + ' eliminada. Recalcula las estadísticas.' }));
         },
-        jornada:a.jornada, rival:a.rival, fecha:a.fecha, marcador:a.gf + ' - ' + a.gc,
+        jornada:a.jornada, rival:a.rival, fecha:a.fecha + ' · ' + (this.casaDe(a.jornada) ? 'Local' : 'Visitante'), marcador:this.marcadorDe(a.jornada, a.gf, a.gc),
         abierta: st.actaAbierta === a.id, chevron: st.actaAbierta === a.id ? '−' : '+',
         toggle: () => this.setState(s => ({ actaAbierta: s.actaAbierta === a.id ? null : a.id })),
         resStyle:'font-family:Anton,sans-serif;font-size:20px;color:' + (a.gf > a.gc ? '#2FA8A0' : a.gf === a.gc ? '#EDEDF2' : ac),
@@ -6329,10 +6707,15 @@ class Component extends DCLogic {
         }));
       })(),
       etiquetaOrden: (ORDEN.find(o => o[0] === st.orden) || ['', ''])[1],
-      ordenaciones: ORDEN.map(([k, label]) => ({ label, style:this.tabBtn(st.orden === k), go:() => this.setState({ orden:k }) })),
-      tabla: [...JUG].sort((a, b) => st.orden === 'forma'
+      ordenaciones: ORDEN.map(([k, label]) => ({ label, style:this.tabBtn(st.orden === k), go:() => this.setState({ orden:k, ordenDir:'desc' }) })),
+      cabeceras: [['pj','📋 PJ','#C9C9D2'],['min','⏱️ Min','#8B9DC3'],['goles','⚽ G','#FF2E88'],['asis','🅰️ A','#2FA8A0'],['ta','🟨','#F5C518'],['tr','🟥','#E4404A'],['p0','🧤 P0','#F2841E'],['ge','🥅 GE','#B06C4B'],['nota','⭐ Nota','#EDEDF2'],['forma','📈 Forma','#EDEDF2']].map(([k, label, col]) => ({
+        label, flecha: st.orden === k ? (st.ordenDir === 'asc' ? ' ▼' : ' ▲') : '',
+        style: 'cursor:pointer;user-select:none;white-space:nowrap;color:' + col + ';' + (st.orden === k ? 'font-weight:700;text-decoration:underline' : ''),
+        go: () => this.setState(s => ({ orden:k, ordenDir: s.orden === k && s.ordenDir !== 'asc' ? 'asc' : 'desc' }))
+      })),
+      tabla: [...JUG].sort((a, b) => (st.ordenDir === 'asc' ? -1 : 1) * (st.orden === 'forma'
         ? this.rendimiento(b, votosPorJugador[b.id]) - this.rendimiento(a, votosPorJugador[a.id])
-        : (b[st.orden] || 0) - (a[st.orden] || 0)).map(p => {
+        : (b[st.orden] || 0) - (a[st.orden] || 0))).map(p => {
         const fl = flecha(rankAntes[p.id], rankAhora[p.id]);
         const rend = this.rendimiento(p, votosPorJugador[p.id]);
         const colRend = rend >= 75 ? '#2FA8A0' : rend >= 50 ? '#F5C518' : rend > 0 ? '#E4572E' : '#5A5A66';
@@ -6662,8 +7045,13 @@ class Component extends DCLogic {
           nAnulados: (st.anulaciones || []).filter(a => a.jornada === jor).length };
       })(),
       verMediasNotas: verMedias,
+      tieneMiNota: miFicha !== null && !!jornadaViva && (admin || verMedias),
+      miNotaTexto: (() => { const l = notasJ[miFicha] || []; return l.length ? (l.reduce((a, b) => a + b, 0) / l.length).toFixed(1) : '—'; })(),
+      miNotaVotos: (notasJ[miFicha] || []).length,
+      miMvpVotos: votos[miFicha] || 0,
+      miPuntosMvp: (() => { const r = ranked.find(x => x.p.id === miFicha); return r ? r.total : 0; })(),
       textoNotas: !jornadaViva ? 'Todavía no hay ningún partido jugado'
-        : 'Puntúa del 0 al 10 a los que jugaron la jornada ' + jornadaViva + ' contra ' + (ultimaActa ? ultimaActa.rival : ''),
+        : 'Puntúa del 0 al 10 a los que jugaron la jornada ' + jornadaViva + ' contra ' + (ultimaActa ? ultimaActa.rival : '') + '',
       listaNotas: convVotacion.filter(p => miFicha === null || p.id !== miFicha).map(p => {
         const mia = misNotasJ[p.id];
         const media = mediaNota(p.id);
@@ -6713,7 +7101,15 @@ class Component extends DCLogic {
           const media = mediaNota(m.id);
           return (!m.nota && media) ? Object.assign({}, m, { nota: Math.round(media * 10) / 10 }) : m;
         });
-        this.patchActa(ultimaActa.id, { mvp_id: ganador.id, minutos: minutosConNota });
+        // Podio: +5 al 1.º, +3 al 2.º, +1 al 3.º. Con empate se comparte puesto y
+        // se salta el siguiente (dos segundos reciben +3 y no hay tercero).
+        const podio = {};
+        ranked.forEach(r => {
+          const pos = ranked.findIndex(x => x.total === r.total) + 1;
+          const pt = { 1:5, 2:3, 3:1 }[pos] || 0;
+          if (pt) podio[r.p.id] = pt;
+        });
+        this.patchActa(ultimaActa.id, { mvp_id: ganador.id, podio, minutos: minutosConNota });
         setTimeout(() => this.recalcular(), 0);
         const base = { tipo:'mvp', fecha:hoyTexto(),
           titulo:'MVP: ' + ganador.nombre,
@@ -6745,7 +7141,7 @@ class Component extends DCLogic {
           }
         }
       },
-      reabrirMvp: () => { if (ultimaActa) this.patchActa(ultimaActa.id, { mvp_id:null }); },
+      reabrirMvp: () => { if (ultimaActa) this.patchActa(ultimaActa.id, { mvp_id:null, podio:null }); },
       hayVotos: ranked.length > 0 && (mvpCerrado || (!esFan && this.visible('recuentoMvp'))),
       verVaGanando: ranked.length > 0 && !mvpCerrado && !esFan && this.visible('liderMvp'),
       recuentoOculto: ranked.length > 0 && !mvpCerrado && (esFan || !this.visible('recuentoMvp')),
