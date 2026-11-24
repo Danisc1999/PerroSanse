@@ -614,6 +614,9 @@
               <option value="{{ o.v }}">{{ o.label }}</option>
             </sc-for>
           </select>
+          <sc-if value="{{ esAdmin }}">
+            <button onClick="{{ alternarBajas }}" title="Oculta o muestra a los jugadores de baja para todos, incluido tú" style="{{ estiloOjoBajas }}">{{ textoOjoBajas }}</button>
+          </sc-if>
           <div style="display:flex;gap:6px;background:#141419;border:1px solid #26262E;border-radius:999px;padding:4px">
             <sc-for list="{{ vistasConv }}" as="v" hint-placeholder-count="2">
               <button onClick="{{ v.go }}" style="{{ v.style }}">{{ v.label }}</button>
@@ -624,6 +627,11 @@
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:16px;margin-top:16px">
         <div style="background:#101014;border:1px solid #26262E;border-radius:18px;padding:16px">
           <div style="font-family:'Barlow Condensed',sans-serif;letter-spacing:.2em;font-size:12px;color:#8A8A96;text-transform:uppercase;margin-bottom:10px">{{ textoModo }}</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+            <sc-for list="{{ filtrosConv }}" as="c" hint-placeholder-count="6">
+              <button onClick="{{ c.go }}" style="{{ c.style }}">{{ c.label }}</button>
+            </sc-for>
+          </div>
           <sc-if value="{{ convListaSimple }}">
             <div style="display:flex;flex-direction:column;gap:8px">
               <sc-for list="{{ listaConvocatoria }}" as="p" hint-placeholder-count="16">
@@ -1052,6 +1060,9 @@
               </sc-if>
               <sc-if value="{{ esAdmin }}">
                 <input value="{{ m.min }}" onChange="{{ m.setMin }}" style="{{ miniInputStyle }}"></input>
+                <sc-if value="{{ m.puedeSerPortero }}">
+                  <button onClick="{{ m.alternarPortero }}" title="Jugó de portero este partido" style="{{ m.porteroBtnStyle }}">🧤</button>
+                </sc-if>
                 <sc-if value="{{ m.esBanda }}">
                   <select value="{{ m.rolBanda }}" onChange="{{ m.setRolBanda }}" title="Cómo jugó ese día (solo lo ves tú)" style="{{ m.rolStyle }}">
                     <option value="carrilero">Carrilero</option>
@@ -1438,7 +1449,7 @@
           <div style="color:#FF2E88">GF</div><div style="color:#B06C4B">GC</div><div>Pts</div>
         </div>
         <sc-for list="{{ clasificacion }}" as="e" hint-placeholder-count="10">
-          <div style="{{ e.rowStyle }}" style-hover="background:rgba(255,255,255,.06);transform:translateX(4px)">
+          <div onClick="{{ e.abrir }}" style="{{ e.rowStyle }}" style-hover="background:rgba(255,255,255,.06);transform:translateX(4px)">
             <div style="font-family:'Anton',sans-serif">{{ e.pos }}</div>
             <div style="{{ e.flechaStyle }}" title="{{ e.flechaTexto }}">{{ e.flecha }}</div>
             <div style="display:flex;align-items:center;gap:10px;min-width:0">
@@ -1700,13 +1711,13 @@
         </sc-if>
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,240px),1fr));gap:12px;margin-top:16px">
           <sc-for list="{{ historicoMvp }}" as="h" hint-placeholder-count="5">
-            <div style="background:#101014;border:1px solid #26262E;border-radius:16px;padding:16px">
+            <div onClick="{{ h.abrir }}" style="cursor:pointer;background:#101014;border:1px solid #26262E;border-radius:16px;padding:16px">
               <div style="font-size:11px;color:#8A8A96;letter-spacing:.14em;text-transform:uppercase;font-family:'Barlow Condensed',sans-serif">Jornada {{ h.jornada }} · {{ h.rival }}</div>
               <div style="display:flex;align-items:center;gap:12px;margin-top:10px">
                 <div style="{{ h.avatarStyle }}">{{ h.iniciales }}</div>
                 <div>
                   <div style="font-family:'Anton',sans-serif;font-size:22px;text-transform:uppercase">{{ h.nombre }}</div>
-                  <div style="font-size:12px;color:#8A8A96">{{ h.votos }} votos · {{ h.linea }}</div>
+                  <div style="font-size:12px;color:#8A8A96">{{ h.votos }} votos en total · {{ h.linea }}</div>
                 </div>
               </div>
             </div>
@@ -1886,6 +1897,17 @@
           <button onClick="{{ nuevoAviso }}" style="background:#FF2E88;color:#0B0B0D;border:0;border-radius:10px;padding:10px 16px;font-weight:700;cursor:pointer">+ Nuevo aviso</button>
         </sc-if>
       </div>
+      <sc-if value="{{ esAdmin }}">
+        <div style="background:#101014;border:1px solid #26262E;border-radius:16px;padding:14px;margin-bottom:14px;max-width:760px">
+          <div style="font-family:'Barlow Condensed',sans-serif;letter-spacing:.14em;font-size:11px;color:#8A8A96;text-transform:uppercase">⚡ Avisos rápidos · se rellenan con la jornada que toca</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">
+            <sc-for list="{{ avisosRapidos }}" as="a" hint-placeholder-count="8">
+              <button onClick="{{ a.go }}" title="{{ a.texto }}" style="background:#16161C;border:1px solid #33333D;color:#EDEDF2;border-radius:999px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;transition:border-color .2s ease" style-hover="border-color:#FF2E88">{{ a.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
       <sc-if value="{{ sinAvisos }}">
         <div style="background:#101014;border:1px dashed #2A2A33;border-radius:18px;padding:40px 24px;text-align:center;margin-top:16px">
         <div style="font-size:30px;opacity:.5">📌</div>
@@ -2898,7 +2920,7 @@
             <sc-for list="{{ ficha.ultimos }}" as="u" hint-placeholder-count="3">
               <div style="display:flex;gap:10px;font-size:13px;color:#C9C9D2;background:#16161C;border-radius:8px;padding:6px 10px">
                 <div style="width:30px;color:#FF2E88;font-family:'Anton',sans-serif">{{ u.j }}</div>
-                <div style="flex:1;text-transform:uppercase;font-family:'Barlow Condensed',sans-serif">{{ u.rival }} {{ u.res }}</div>
+                <div style="flex:1;text-transform:uppercase;font-family:'Barlow Condensed',sans-serif">{{ u.rival }} {{ u.res }}<div style="font-size:11px;color:#8A8A96;text-transform:none;font-family:Barlow,sans-serif;margin-top:2px">{{ u.detalle }}</div></div>
                 <div style="color:#8A8A96">{{ u.min }}'</div><div style="width:34px;text-align:right;font-family:'Anton',sans-serif">{{ u.nota }}</div>
               </div>
             </sc-for>
@@ -2920,6 +2942,83 @@
             </div>
           </div>
         </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ hayEquipo }}">
+    <div onClick="{{ cerrarEquipo }}" style="position:fixed;inset:0;background:rgba(4,4,6,.86);z-index:50;display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow:auto">
+      <div style="background:#101014;border:1px solid #33333D;border-radius:20px;max-width:560px;width:100%;padding:24px;margin:auto;max-height:90vh;overflow:auto">
+        <div style="display:flex;align-items:center;gap:16px">
+          <div style="{{ equipo.badge }}">{{ equipo.sigla }}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-family:'Anton',sans-serif;font-size:26px;text-transform:uppercase;line-height:1.05">{{ equipo.nombre }}</div>
+            <div style="font-size:13px;color:#8A8A96;margin-top:4px">{{ equipo.posTxt }}</div>
+          </div>
+        </div>
+        <sc-if value="{{ equipo.haySancion }}"><div style="margin-top:12px;font-size:13px;color:#FF6FAC">⚠ {{ equipo.sancionTxt }}</div></sc-if>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,118px),1fr));gap:8px;margin-top:16px">
+          <sc-for list="{{ equipo.tiles }}" as="t" hint-placeholder-count="12">
+            <div style="{{ t.tileStyle }}" style-hover="transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.45)">
+              <div style="{{ t.vStyle }}">{{ t.ic }} {{ t.v }}</div>
+              <div style="{{ t.kStyle }}">{{ t.k }}</div>
+            </div>
+          </sc-for>
+        </div>
+        <sc-if value="{{ equipo.hayRacha }}">
+          <div style="font-family:'Barlow Condensed',sans-serif;letter-spacing:.14em;font-size:11px;color:#8A8A96;text-transform:uppercase;margin-top:18px">Racha</div>
+          <div style="display:flex;gap:6px;margin-top:8px"><sc-for list="{{ equipo.racha }}" as="r" hint-placeholder-count="5"><div style="{{ r.style }}">{{ r.l }}</div></sc-for></div>
+        </sc-if>
+        <sc-if value="{{ equipo.hayProximo }}">
+          <div style="font-family:'Barlow Condensed',sans-serif;letter-spacing:.14em;font-size:11px;color:#8A8A96;text-transform:uppercase;margin-top:18px">Próximo partido</div>
+          <div style="font-size:14px;color:#EDEDF2;margin-top:6px">{{ equipo.proximo }}</div>
+        </sc-if>
+        <sc-if value="{{ equipo.hayUltimos }}">
+          <div style="font-family:'Barlow Condensed',sans-serif;letter-spacing:.14em;font-size:11px;color:#8A8A96;text-transform:uppercase;margin-top:18px">Resultados de la temporada · del más reciente al más antiguo</div>
+          <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px"><sc-for list="{{ equipo.ultimos }}" as="u" hint-placeholder-count="4"><div style="{{ u.style }}">{{ u.txt }}</div></sc-for></div>
+        </sc-if>
+        <sc-if value="{{ equipo.hayContraNosotros }}">
+          <div style="font-family:'Barlow Condensed',sans-serif;letter-spacing:.14em;font-size:11px;color:#8A8A96;text-transform:uppercase;margin-top:18px">Contra nosotros</div>
+          <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px"><sc-for list="{{ equipo.contraNosotros }}" as="u" hint-placeholder-count="2"><div style="{{ u.style }}">{{ u.txt }}</div></sc-for></div>
+        </sc-if>
+        <sc-if value="{{ equipo.hayPosiciones }}">
+          <div style="font-family:'Barlow Condensed',sans-serif;letter-spacing:.14em;font-size:11px;color:#8A8A96;text-transform:uppercase;margin-top:18px">Puesto jornada a jornada</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"><sc-for list="{{ equipo.posiciones }}" as="x" hint-placeholder-count="5"><div style="background:#16161C;border:1px solid #24242C;border-radius:8px;padding:5px 9px;font-size:12px"><span style="color:#6D6D7A">{{ x.j }}</span> <span style="font-family:'Anton',sans-serif">{{ x.p }}</span></div></sc-for></div>
+        </sc-if>
+        <button onClick="{{ cerrarEquipo }}" style="margin-top:20px;width:100%;background:#FF2E88;color:#0B0B0D;border:0;border-radius:12px;padding:12px;font-weight:700;cursor:pointer">Cerrar</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ hayDetalleMvp }}">
+    <div onClick="{{ cerrarDetalleMvp }}" style="position:fixed;inset:0;background:rgba(4,4,6,.86);z-index:55;display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow:auto">
+      <div style="background:#101014;border:1px solid #F5C518;border-radius:20px;max-width:560px;width:100%;padding:24px;margin:auto;max-height:90vh;overflow:auto">
+        <div style="font-family:'Barlow Condensed',sans-serif;letter-spacing:.2em;font-size:12px;color:#F5C518;text-transform:uppercase">🏆 Votos del MVP · solo tú lo ves</div>
+        <div style="font-family:'Anton',sans-serif;font-size:24px;text-transform:uppercase;margin-top:6px">Jornada {{ detalleMvp.jornada }} · {{ detalleMvp.rival }}</div>
+        <div style="font-size:14px;color:#C9C9D2;margin-top:8px">Ganador: <b>{{ detalleMvp.ganador }}</b></div>
+        <div style="font-size:13px;color:#8A8A96;margin-top:4px">{{ detalleMvp.resumenTxt }}</div>
+        <div style="font-size:12px;color:#6D6D7A;margin-top:4px">{{ detalleMvp.aclaracion }}</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;letter-spacing:.14em;font-size:11px;color:#8A8A96;text-transform:uppercase;margin-top:18px">Por jugador</div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
+          <sc-for list="{{ detalleMvp.resumen }}" as="r" hint-placeholder-count="5">
+            <div style="background:#16161C;border:1px solid #24242C;border-radius:12px;padding:10px 12px">
+              <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
+                <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:18px;text-transform:uppercase;flex:1">{{ r.nombre }}</div>
+                <div style="font-family:'Anton',sans-serif;font-size:20px;color:#F5C518">{{ r.votos }} <span style="font-size:11px;color:#8A8A96">votos</span></div>
+                <div style="font-size:12px;color:#8A8A96">nota {{ r.nota }} ({{ r.nNotas }})</div>
+              </div>
+              <div style="font-size:12px;color:#C9C9D2;margin-top:4px">Le votaron: {{ r.quienes }}</div>
+              <sc-if value="{{ r.hayAnuladas }}"><div style="font-size:12px;color:#6D6D7A;margin-top:2px;text-decoration:line-through">Anulados: {{ r.quienesAnuladas }}</div></sc-if>
+            </div>
+          </sc-for>
+        </div>
+        <div style="font-family:'Barlow Condensed',sans-serif;letter-spacing:.14em;font-size:11px;color:#8A8A96;text-transform:uppercase;margin-top:18px">Quién votó a quién</div>
+        <div style="display:flex;flex-direction:column;gap:4px;margin-top:8px">
+          <sc-for list="{{ detalleMvp.votos }}" as="v" hint-placeholder-count="8">
+            <div style="{{ v.style }}"><div style="flex:1">{{ v.quien }}</div><div style="color:#6D6D7A">→</div><div style="flex:1;text-align:right">{{ v.a }}</div></div>
+          </sc-for>
+        </div>
+        <button onClick="{{ cerrarDetalleMvp }}" style="margin-top:20px;width:100%;background:#F5C518;color:#0B0B0D;border:0;border-radius:12px;padding:12px;font-weight:700;cursor:pointer">Cerrar</button>
       </div>
     </div>
   </sc-if>
@@ -3355,9 +3454,12 @@ const VISIBLE_POR_DEFECTO = {
   caja: true,             // multas y cuotas
   rotacion: true,         // minutos de cada uno
   clasificacion: true,
-  estadisticas: true
+  estadisticas: true,
+  bajasConv: true         // jugadores de baja dentro de la convocatoria
 };
 const ETIQUETAS_VIS = [
+  ['mister_bajasConv', 'Jugadores de baja en tu convocatoria', 'Si lo ocultas, tú tampoco los ves en la lista'],
+  ['bajasConv',    'Jugadores de baja en la convocatoria', 'Si lo ocultas, no salen en la lista ni en el filtro. Tú sí los ves'],
   ['popularidad',  'Ranking de popularidad',        'Los fans que sigue cada jugador'],
   ['recuentoMvp',  'Recuento de votos en vivo',     'Antes de que cierres la votación'],
   ['liderMvp',     'Quién va ganando el MVP',       'Antes de que cierres la votación'],
@@ -3517,24 +3619,40 @@ const TIPOS_CARTEL = [
 // 'todos', 'jugador', 'fan' o 'mister'.
 // Versión X.Y.Z: X cambios muy grandes, Y funcionalidades nuevas,
 // Z arreglos y retoques pequeños.
-const APP_VERSION = '1.8.1';
+const APP_VERSION = '1.9.1';
 const NOVEDADES = [
-  { version:'1.8.1', fecha:'27 nov 2026', items:[
+  { version:'1.9.1', fecha:'24 nov 2026 · 17:08', items:[
+    { para:'mister', texto:'Convocatoria: botón 👁 / 🙈 para ocultar o mostrar a los de baja a todos, incluido tú. Si quieres verlos tú y que ellos no, se hace desde Mi cuenta → Visibilidad.' }
+  ] },
+  { version:'1.9.0', fecha:'24 nov 2026', items:[
+    { para:'todos',   texto:'Convocatoria: filtra por estado (Va, Duda, No va, Baja, Sin contestar) y verás solo esos jugadores.' },
+    { para:'todos',   texto:'Clasificación: pulsa un equipo para ver todas sus estadísticas, su racha, sus últimos resultados y su próximo partido.' },
+    { para:'mister',  texto:'Convocatoria: en Mi cuenta → Visibilidad puedes ocultar a los de baja a jugadores y fans. Tú los sigues viendo.' },
+    { para:'mister',  texto:'MVP → Histórico: al pulsar una jornada ves todos los votos, quién votó a quién y las notas. Ahora pone «votos en total».' },
+    { para:'mister',  texto:'Tablón: avisos rápidos listos para pulsar (convocatoria, datos del partido, resultado, MVP…) con la jornada ya puesta. Puedes seguir escribiendo los tuyos.' }
+  ] },
+  { version:'1.8.2', fecha:'24 nov 2026', items:[
+    { para:'mister', texto:'Acta: el botón 🧤 junto a cada jugador lo pone de portero en ese partido. Cuenta como portero en los encajados, la portería a cero, el MVP y la forma.' },
+    { para:'todos',  texto:'En la ficha, «Últimos partidos» muestra los goles y asistencias de cada partido, y a los porteros sus goles encajados o si dejaron la portería a cero.' },
+    { para:'todos',  texto:'La ficha cuenta los partidos que ha jugado cada uno de portero.' },
+    { para:'todos',  texto:'Arreglado: las asistencias a un jugador con nombre parecido (Dani y Danisc) ya no se mezclan.' }
+  ] },
+  { version:'1.8.1', fecha:'24 nov 2026', items:[
     { para:'todos', texto:'Los resultados siempre se ven con el equipo local primero: calendario, actas, historial, gráficas y publicaciones. En el acta, escudo, nombre y marcador siguen ese mismo orden.' },
     { para:'todos', texto:'La app se actualiza sola con lo que publica el míster, sin tener que recargar. No se refresca mientras estás escribiendo o tocando algo.' }
   ] },
-  { version:'1.8.0', fecha:'26 nov 2026', items:[
+  { version:'1.8.0', fecha:'24 nov 2026', items:[
     { para:'todos',   texto:'En la ficha de cada jugador, una gráfica con sus puntos partido a partido, para ver cómo evoluciona.' },
     { para:'todos',   texto:'Sin conexión puedes seguir consultando la última versión que viste. No se puede editar hasta que vuelva la red, para no pisar cambios de otros.' },
     { para:'jugador', texto:'Si no has contestado la convocatoria, recibirás un recordatorio automático los días previos al partido.' },
     { para:'mister',  texto:'El recordatorio automático a quien no ha contestado se envía solo cada tarde, hasta 3 días antes del partido. Sigues teniendo el botón manual.' }
   ] },
-  { version:'1.7.1', fecha:'25 nov 2026', items:[
+  { version:'1.7.1', fecha:'24 nov 2026', items:[
     { para:'todos', texto:'En la forma de cada jugador se ve cuál fue el último partido valorado, y «Sin datos» si todavía no hay ninguno.' },
     { para:'todos', texto:'En las actas, un jugador sin nota aún muestra «Pend.» en lugar de un cero.' },
     { para:'jugador', texto:'Al puntuar, la pregunta es la misma para todos: ¿cómo de bien cumplió su función ese día y cuánto ayudó al equipo?' }
   ] },
-  { version:'1.7.0', fecha:'25 nov 2026', items:[
+  { version:'1.7.0', fecha:'24 nov 2026', items:[
     { para:'todos',   texto:'Nueva forma física: pesa sobre todo tu nota, y suman el podio del MVP (+5, +3, +1) y tus goles y asistencias según tu función ese día. Puede pasar de 100. Los minutos ya no cuentan.' },
     { para:'todos',   texto:'Los goles y asistencias valen más cuanto más atrás juegas: delantero 1/1, medio 2/1, carrilero 3/2, central o portero 4/3.' },
     { para:'todos',   texto:'Los porteros suman o restan según los goles que encajan: 0 → +2, 1 → +1, 2 → 0, 3 → −1, 4 o más → −2.' },
@@ -3546,7 +3664,7 @@ const NOVEDADES = [
     { para:'todos', texto:'Forma física más justa: los jugadores de banda parten de la misma base que un central, porque defienden y atacan, y una nota baja de los compañeros ya no se compensa con minutos o goles.' },
     { para:'todos', texto:'«Ver jornada completa» muestra el escudo de cada equipo.' }
   ] },
-  { version:'1.6.0', fecha:'28 nov 2026', items:[
+  { version:'1.6.0', fecha:'23 nov 2026', items:[
     { para:'todos',   texto:'Panel: top 5 en goles, asistencias y mejor forma. La nota media de cada jornada se ve ya bajo el resultado, sin pasar el ratón.' },
     { para:'todos',   texto:'Calendario: botón «Ver jornada completa» con los 7 partidos, su resultado y la posición y puntos de cada equipo.' },
     { para:'todos',   texto:'Estadísticas: pulsa el nombre de una columna para ordenarla. ▲ de más a menos, ▼ de menos a más.' },
@@ -3559,11 +3677,11 @@ const NOVEDADES = [
     { para:'mister',  texto:'Convocatoria: botón para recordar a los que aún no han contestado. Panel: lista de lo que te falta por hacer.' },
     { para:'mister',  texto:'Mi cuenta → Recursos: copia de seguridad descargable. Mi cuenta → Pestañas: qué se usa y qué no.' }
   ] },
-  { version:'1.5.0', fecha:'17 nov 2026', items:[
+  { version:'1.5.0', fecha:'', items:[
     { para:'todos',  texto:'Nueva pestaña «Propuestas»: cada jugador y cada fan puede proponer su once para la jornada, ver el de los demás y votarlo con 👍 o 👎. Las propuestas se ordenan por votos.' },
     { para:'mister', texto:'En «Propuestas» ves todas, las votadas arriba, y con «Usar esta» cargas una como tu once para retocarla y publicarla. Puedes borrar cualquiera y ocultar la pestaña desde Mi cuenta → Visibilidad.' }
   ] },
-  { version:'1.4.0', fecha:'17 nov 2026', items:[
+  { version:'1.4.0', fecha:'', items:[
     { para:'todos',   texto:'La forma se calcula con tus últimos 3 partidos (65 %) y tu trayectoria de toda la temporada (35 %). Quien no juega no pierde forma. Los porteros tienen su propia fórmula, con goles encajados y porterías a cero.' },
     { para:'todos',   texto:'En tu ficha, junto a la forma, sale cómo estabas antes de la última jornada y cuánto has subido o bajado.' },
     { para:'todos',   texto:'Clasificación: nuevo botón «Ver resultados de todas las jornadas», con escudos y filtros por jornada o por equipo. Los partidos no presentados salen marcados.' },
@@ -3586,10 +3704,10 @@ const NOVEDADES = [
     { para:'mister',  texto:'Meter resultados trae nuestro resultado del acta y los 7 partidos de la jornada con el calendario oficial.' },
     { para:'mister',  texto:'Al guardar fallos de conexión, la app reintenta sola y solo te avisa si sigue sin red.' }
   ] },
-  { version:'1.3.1', fecha:'17 nov 2026', items:[
+  { version:'1.3.1', fecha:'', items:[
     { para:'mister', texto:'Caja → + Cobro: si el jugador tiene multas sin pagar aparece el concepto «Multas», que salda las más antiguas con lo que pague.' }
   ] },
-  { version:'1.3.0', fecha:'17 nov 2026', items:[
+  { version:'1.3.0', fecha:'', items:[
     { para:'todos',   texto:'La forma ahora mide tus últimos 3 partidos y no toda la temporada, así que sube y baja jornada a jornada. Los porteros tienen su propia fórmula, basada en goles encajados y porterías a cero.' },
     { para:'todos',   texto:'Clasificación: nuevo botón para ver los resultados de todas las jornadas, filtrando por jornada o por equipo.' },
     { para:'todos',   texto:'Las tablas avisan de que se pueden deslizar y los filtros de estadísticas ya no se cortan en el móvil.' },
@@ -3598,7 +3716,7 @@ const NOVEDADES = [
     { para:'mister',  texto:'Mi cuenta → Visibilidad: ahora puedes quitar pestañas enteras a jugadores y fans, y también de tu propio menú.' },
     { para:'mister',  texto:'Meter resultados trae ya nuestro resultado del acta puesto.' }
   ] },
-  { version:'1.2.0', fecha:'28 sep 2026', items:[
+  { version:'1.2.0', fecha:'', items:[
     { para:'todos',   texto:'Ya puedes editar ✎ o borrar 🗑 tus propios comentarios del feed.' },
     { para:'todos',   texto:'Dale ♥ a los comentarios que más te gusten.' },
     { para:'todos',   texto:'«Ver al rival» ahora enseña su escudo.' },
@@ -3609,12 +3727,12 @@ const NOVEDADES = [
     { para:'mister',  texto:'Nueva sección en Ajustes: qué fans siguen a cada jugador.' },
     { para:'mister',  texto:'Control de versiones con novedades por rol (esto que estás leyendo).' }
   ] },
-  { version:'1.1.0', fecha:'24 sep 2026', items:[
+  { version:'1.1.0', fecha:'', items:[
     { para:'todos',   texto:'Calendario oficial de las 26 jornadas y escudos de los 14 equipos.' },
     { para:'todos',   texto:'En el buzón puedes votar 👍 o 👎 las sugerencias de los demás.' },
     { para:'mister',  texto:'Panel de moderación: registro de fans, bloqueo y borrado de comentarios.' }
   ] },
-  { version:'1.0.0', fecha:'23 sep 2026', items:[
+  { version:'1.0.0', fecha:'', items:[
     { para:'todos',   texto:'Lanzamiento de la app oficial del Perro Sanse F.C.' }
   ] }
 ];
@@ -3772,7 +3890,7 @@ function hoyTexto() {
 function encajadosPorPortero(acta, jugadores) {
   const porteros = (acta.minutos || []).filter(m => {
     const j = (jugadores || []).find(x => x.id === m.id);
-    return j && j.pos === 'POR' && m.min > 0;
+    return j && (j.pos === 'POR' || m.rolPartido === 'POR') && m.min > 0;
   });
   const out = {};
   if (!porteros.length) return out;
@@ -3917,7 +4035,7 @@ class Component extends DCLogic {
     historicoLiga:[], jornadaFoto:null, quiniela:null, resultadosLiga:{}, ultimaHoraSel:null, propuestas:[], votosPropuesta:[], propBorrador:{ formacion:'1-2-3-1', once:{} }, propGrupo:'jugador', sinDeuda:null, visSub:'jugador', verResultadosLiga:false, resJornada:'todas', resEquipo:'todos',
     escudoAbierto:false, uso:null, usoCargando:false, usoAviso:'', fotosEquipacion:{},
     contadores:null, confeti:[], celebracion:null, arrastrando:null, vistaCampo:'2d', tabAnim:0, anuncio:null, jornadaHist:null, nombreTemporada:'', altaEmail:'', altaJugador:null, altaAviso:'', sugerencias:[], textoSugerencia:'', graciasSugerencia:false,
-    sinConexion:false, cacheDesde:null,
+    sinConexion:false, cacheDesde:null, filtroConv:'todos', equipoAbierto:null, mvpDetalle:null,
     mensajeGrupo:'', copiadoGrupo:false, resultadoAviso:'', confirmarBorrado:null,
     estadoAvisos:'default', appInstalada:false, pushIncompleto:false, avisoInstalar:'', resultadoEnvio:'', envioOk:false,
     destinoAviso:'todos', jugadorAviso:null, enviandoAviso:false, resumenAvisos:null, tituloAviso:'', cuerpoAviso:'', guiaSel:'ios',
@@ -3991,6 +4109,46 @@ class Component extends DCLogic {
       }
       this.forceUpdate();
     });
+  }
+
+  /** Partidos en los que ha jugado de portero (de siempre o asignado ese día). */
+  partidosDePortero(j) {
+    return (this.state.actas || []).filter(a => (a.minutos || []).some(m => m.id === j.id && m.min > 0 && (j.pos === 'POR' || m.rolPartido === 'POR'))).length;
+  }
+
+  /** Línea de detalle de un partido: encajados si fue portero; goles y asistencias si no. */
+  detallePartido(j, a, m) {
+    if (j.pos === 'POR' || m.rolPartido === 'POR') {
+      const r = encajadosPorPortero(a, this.state.jugadores)[j.id];
+      const extra = j.pos !== 'POR' ? ' · jugó de portero' : '';
+      if (!r) return '🧤 Portero' + extra;
+      return '🧤 ' + (r.p0 ? 'Portería a cero' : r.ge + (r.ge === 1 ? ' gol encajado' : ' goles encajados')) + extra;
+    }
+    const ev = a.eventos || [], n = j.nombre.toLowerCase();
+    const g = ev.filter(e => e.jugador === j.nombre && /gol/i.test(e.detalle) && !/propia/i.test(e.detalle)).length;
+    const as = ev.filter(e => /asist/i.test(e.detalle || '') && new RegExp('asist[.]?[ ]*' + n.replace(/[^a-záéíóúñ0-9 ]/g, '.') + '(?![a-záéíóúñ0-9])', 'i').test(e.detalle || '')).length;
+    const ta = ev.filter(e => e.jugador === j.nombre && /amarilla/i.test(e.detalle)).length;
+    const tr = ev.filter(e => e.jugador === j.nombre && /roja/i.test(e.detalle)).length;
+    const partes = [];
+    if (g) partes.push('⚽ ' + g + (g === 1 ? ' gol' : ' goles'));
+    if (as) partes.push('🅰️ ' + as + (as === 1 ? ' asistencia' : ' asistencias'));
+    if (ta) partes.push('🟨 ' + ta);
+    if (tr) partes.push('🟥 ' + tr);
+    return partes.join(' · ') || 'Sin goles ni asistencias';
+  }
+
+  /** ¿Se enseñan los de baja en la convocatoria a quien está mirando (según la vista que use)? */
+  verBajasConv() {
+    const s = this.state, vista = s.rol === 'mister' ? (s.verComo || 'mister') : s.rol;
+    if (vista === 'mister') return (s.visibilidad || VISIBLE_POR_DEFECTO).mister_bajasConv !== false;
+    return this.visible('bajasConv');
+  }
+
+  /** Deja en la convocatoria solo lo que pide el filtro de estado. */
+  filtrarConv(lista, verBajas) {
+    let f = this.state.filtroConv || 'todos';
+    if (!verBajas && f === 'Baja') f = 'todos';
+    return lista.filter(r => (verBajas || r.estadoLabel !== 'Baja') && (f === 'todos' || r.estadoLabel === f));
   }
 
   /** Si jugamos en casa en esa jornada (por defecto, sí). */
@@ -4592,14 +4750,15 @@ class Component extends DCLogic {
     const ev = a.eventos || [];
     const mio = ev.filter(e => e.jugador === j.nombre);
     const goles = mio.filter(e => /gol/i.test(e.detalle) && !/propia/i.test(e.detalle)).length;
-    const asis = ev.filter(e => new RegExp('asist\\.?\\s*' + esc(j.nombre), 'i').test(e.detalle)).length;
+    const asis = ev.filter(e => new RegExp('asist\\.?\\s*' + esc(j.nombre) + '(?![A-Za-z0-9ÁÉÍÓÚáéíóúñÑ])', 'i').test(e.detalle)).length;
     const ta = mio.filter(e => /amarilla/i.test(e.detalle)).length;
     const tr = mio.filter(e => /roja/i.test(e.detalle)).length;
     const pp = mio.filter(e => /propia nuestro/i.test(e.detalle)).length;
 
     // Rol de ese día. Una banda cuenta como carrilero salvo que el míster
     // marque que jugó de banda ofensiva.
-    const rol = j.pos === 'BAN' ? (m.rolBanda === 'ofensiva' ? 'ofensiva' : 'carrilero') : j.pos;
+    const esPor = j.pos === 'POR' || m.rolPartido === 'POR';
+    const rol = esPor ? 'POR' : (j.pos === 'BAN' ? (m.rolBanda === 'ofensiva' ? 'ofensiva' : 'carrilero') : j.pos);
     const V = { DEL:[1, 1], MC:[2, 1], ofensiva:[2, 1], carrilero:[3, 2], DEF:[4, 3], POR:[4, 3] }[rol] || [2, 1];
     const plus = goles * V[0] + asis * V[1];
 
@@ -4609,8 +4768,8 @@ class Component extends DCLogic {
     // Portero: según los goles que se le atribuyen. Con dos porteros y sin
     // desglose en el acta, el ajuste es 0 para los dos.
     let ajPor = 0;
-    if (j.pos === 'POR') {
-      const porteros = (a.minutos || []).filter(x => { const q = (this.state.jugadores || []).find(y => y.id === x.id); return q && q.pos === 'POR' && x.min > 0; });
+    if (esPor) {
+      const porteros = (a.minutos || []).filter(x => { const q = (this.state.jugadores || []).find(y => y.id === x.id); return q && (q.pos === 'POR' || x.rolPartido === 'POR') && x.min > 0; });
       const apunt = m.ge !== undefined && m.ge !== null && m.ge !== '';
       let ge = null;
       if (porteros.length <= 1) ge = apunt ? Number(m.ge) : (a.gc || 0);
@@ -5044,7 +5203,7 @@ class Component extends DCLogic {
       const asi = acta ? (acta.eventos || []).filter(e => esGolDeJugador(e.detalle) && asistenteDe(e.detalle).toLowerCase() === p.nombre.toLowerCase()).length : 0;
       const ta = acta ? (acta.eventos || []).filter(e => e.jugador === p.nombre && /amarilla/i.test(e.detalle)).length : 0;
       const tr = acta ? (acta.eventos || []).filter(e => e.jugador === p.nombre && /roja/i.test(e.detalle)).length : 0;
-      const rep = acta && p.pos === 'POR' ? (encajadosPorPortero(acta, JUG)[p.id] || null) : null;
+      const rep = acta ? (encajadosPorPortero(acta, JUG)[p.id] || null) : null;
       const p0 = rep && rep.p0 ? 1 : 0;
       const pp = acta ? (acta.eventos || []).filter(e => e.jugador === p.nombre && /propia nuestro/i.test(e.detalle)).length : 0;
       const total = (media ? (media - 5) * 4 : 0) + (votos[p.id] || 0) * 5 + gol * 3 + asi * 2 + p0 * 3 - ta - tr * 3 - pp * 2;
@@ -5675,6 +5834,136 @@ class Component extends DCLogic {
         });
       })(),
 
+      filtrosConv: (() => {
+        const verB = this.verBajasConv();
+        const etq = (p) => { const e = estadosJ[p.id] || (p.estado === 'baja' ? 'fuera' : 'pendiente'); return e === 'si' ? 'Va' : e === 'duda' ? 'Duda' : e === 'fuera' ? 'Baja' : e === 'pendiente' ? 'Sin contestar' : 'No va'; };
+        const actual = (!verB && st.filtroConv === 'Baja') ? 'todos' : st.filtroConv;
+        return [['todos', 'Todos'], ['Va', 'Va'], ['Duda', 'Duda'], ['No va', 'No va'], ['Baja', 'Baja'], ['Sin contestar', 'Sin contestar']]
+          .filter(([k]) => k !== 'Baja' || verB)
+          .map(([k, l]) => {
+            const n = k === 'todos' ? JUG.filter(p => verB || etq(p) !== 'Baja').length : JUG.filter(p => etq(p) === k).length;
+            return { label: l + ' ' + n, style: this.tabBtn(actual === k), go: () => this.setState({ filtroConv:k }) };
+          });
+      })(),
+      hayEquipo: !!st.equipoAbierto && !!TABLA_LIGA.find(x => x.nombre === st.equipoAbierto),
+      cerrarEquipo: () => this.setState({ equipoAbierto:null }),
+      equipo: (() => {
+        const e = st.equipoAbierto ? TABLA_LIGA.find(x => x.nombre === st.equipoAbierto) : null;
+        if (!e) return { nombre:'', badge:'', sigla:'', tiles:[], ultimos:[], posiciones:[], hayProximo:false, hayUltimos:false, hayPosiciones:false, hayContraNosotros:false };
+        const pos = TABLA_LIGA.indexOf(e) + 1, dif = e.gf - e.gc;
+        const rl = st.resultadosLiga || {};
+        const jug = [];
+        Object.keys(rl).map(Number).sort((a, b) => a - b).forEach(n => (rl[n] || []).forEach(r => {
+          if (r.local !== e.nombre && r.visita !== e.nombre) return;
+          const casa = r.local === e.nombre, gf = casa ? r.gl : r.gv, gc = casa ? r.gv : r.gl;
+          jug.push({ n, casa, rival: casa ? r.visita : r.local, gf, gc, np: r.np });
+        }));
+        const chip = (x) => { const g = x.gf > x.gc, em = x.gf === x.gc; const col = g ? '#2FA8A0' : em ? '#8A8A96' : '#E4404A';
+          return { txt:'J' + x.n + ' · ' + (x.casa ? e.nombre + ' ' + x.gf + '-' + x.gc + ' ' + x.rival : x.rival + ' ' + x.gc + '-' + x.gf + ' ' + e.nombre) + (x.np ? ' · no presentado' : ''),
+            style:'font-size:13px;color:#DDDDE4;background:#16161C;border-left:3px solid ' + col + ';border-radius:8px;padding:7px 10px' }; };
+        const jugadas = new Set(jug.map(x => x.n));
+        const proxCal = CAL_LIGA.find(c => !jugadas.has(c.n) && c.p.some(([l, v]) => equipoLiga(l, TABLA_LIGA) === e.nombre || equipoLiga(v, TABLA_LIGA) === e.nombre));
+        let proximo = '';
+        if (proxCal) { const par = proxCal.p.find(([l, v]) => equipoLiga(l, TABLA_LIGA) === e.nombre || equipoLiga(v, TABLA_LIGA) === e.nombre);
+          const l = equipoLiga(par[0], TABLA_LIGA), v = equipoLiga(par[1], TABLA_LIGA);
+          proximo = 'J' + proxCal.n + ' · ' + l + ' vs ' + v; }
+        const hist = (st.historicoLiga || []).filter(h => h.nombre === e.nombre).sort((a, b) => a.jornada - b.jornada);
+        const contra = st.actas.filter(a => a.rival === e.nombre).sort((a, b) => a.jornada - b.jornada);
+        const pj = e.pj || 0;
+        return {
+          nombre:e.nombre, badge:this.badgeEquipo(e.nombre, e.color, 72), sigla:this.siglaSiNoHayEscudo(e.nombre, siglaEquipo(e.nombre, TABLA_LIGA.map(x => x.nombre))),
+          posTxt: hayJornadasLiga ? pos + 'º de ' + TABLA_LIGA.length + ' · ' + pts(e) + ' pts' : 'La liga aún no ha empezado',
+          tiles: [
+            { k:'Jugados', v:pj, c:COL_LIGA.pj, ic:'📋' }, { k:'Ganados', v:e.g || 0, c:COL_LIGA.g, ic:'✅' },
+            { k:'Empatados', v:e.e || 0, c:COL_LIGA.e, ic:'➖' }, { k:'Perdidos', v:e.p || 0, c:COL_LIGA.p, ic:'❌' },
+            { k:'Goles a favor', v:e.gf || 0, c:COL_LIGA.gf, ic:'⚽' }, { k:'Goles en contra', v:e.gc || 0, c:COL_LIGA.gc, ic:'🥅' },
+            { k:'Diferencia', v:(dif > 0 ? '+' : '') + dif, c:dif > 0 ? '#2FA8A0' : dif < 0 ? '#E4404A' : '#8A8A96', ic:'⚖️' },
+            { k:'Puntos', v:pts(e), c:'#F5C518', ic:'⭐' }, { k:'Pts por partido', v:pj ? (pts(e) / pj).toFixed(2) : '—', c:'#F5C518', ic:'📈' },
+            { k:'Goles a favor / partido', v:pj ? (e.gf / pj).toFixed(1) : '—', c:COL_LIGA.gf, ic:'⚽' },
+            { k:'Goles en contra / partido', v:pj ? (e.gc / pj).toFixed(1) : '—', c:COL_LIGA.gc, ic:'🥅' },
+            { k:'% victorias', v:pj ? Math.round(e.g / pj * 100) + '%' : '—', c:COL_LIGA.g, ic:'🏆' }
+          ].map(t => Object.assign(t, {
+            tileStyle:'background:' + t.c + '14;border:1px solid ' + t.c + '66;border-radius:12px;padding:10px;transition:transform .2s ease,box-shadow .2s ease',
+            vStyle:'font-family:Anton,sans-serif;font-size:22px;color:' + t.c,
+            kStyle:'font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-family:Barlow Condensed,sans-serif;line-height:1.2;color:' + t.c + 'CC'
+          })),
+          haySancion: (e.sancion || 0) > 0, sancionTxt: 'Sanción de ' + (e.sancion || 0) + ' puntos',
+          hayRacha: (e.racha || []).length > 0,
+          racha: (e.racha || []).map(l => ({ l, style:'width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:Anton,sans-serif;font-size:14px;color:' + (l === 'G' ? '#0B0B0D' : '#EDEDF2') + ';background:' + (l === 'G' ? '#2FA8A0' : l === 'E' ? '#3A3A44' : '#8A2545') })),
+          hayUltimos: jug.length > 0, ultimos: jug.slice().reverse().map(chip),
+          rachaTit: 'Racha · últimos ' + (e.racha || []).length,
+          hayProximo: !!proximo, proximo,
+          hayPosiciones: hist.length > 1, posiciones: hist.map(h => ({ j:'J' + h.jornada, p:h.puesto + 'º' })),
+          hayContraNosotros: contra.length > 0,
+          contraNosotros: contra.map(a => ({ txt:'J' + a.jornada + ' · ' + (this.casaDe(a.jornada) ? 'Perro Sanse ' + a.gf + '-' + a.gc + ' ' + e.nombre : e.nombre + ' ' + a.gc + '-' + a.gf + ' Perro Sanse'), style:'font-size:13px;color:#DDDDE4;background:#16161C;border-left:3px solid ' + (a.gf > a.gc ? '#2FA8A0' : a.gf === a.gc ? '#8A8A96' : '#E4404A') + ';border-radius:8px;padding:7px 10px' }))
+        };
+      })(),
+      hayDetalleMvp: admin && !!st.mvpDetalle,
+      cerrarDetalleMvp: () => this.setState({ mvpDetalle:null }),
+      detalleMvp: (() => {
+        if (!admin || !st.mvpDetalle) return { votos:[], resumen:[], notas:[] };
+        const jor = st.mvpDetalle, acta = st.actas.find(a => a.jornada === jor) || {};
+        const perfiles = st.perfilesLista || [];
+        const nombreDe = (uid) => { const pf = perfiles.find(x => x.id === uid); return pf ? (pf.nombre || 'Sin nombre') + (pf.rol === 'fan' ? ' (fan)' : '') : (uid === st.perfilId ? 'Tú' : 'Usuario ' + String(uid).slice(0, 6)); };
+        const jn = (id) => (JUG.find(x => x.id === id) || { nombre:'—' }).nombre;
+        const votos = todosVotos.filter(v => v.jornada === jor);
+        const porJug = {};
+        votos.forEach(v => { const an = anulada('voto', jor, v.votante); (porJug[v.jugador_id] = porJug[v.jugador_id] || { cuentan:[], anuladas:[] })[an ? 'anuladas' : 'cuentan'].push(nombreDe(v.votante)); });
+        const notasJ = (st.notas || []).filter(n => n.jornada === jor);
+        const resumen = Object.keys(porJug).map(id => {
+          const nn = notasJ.filter(n => String(n.jugador_id) === id && !anulada('nota', jor, n.votante, n.jugador_id));
+          return { nombre:jn(Number(id)), votos:porJug[id].cuentan.length, anuladas:porJug[id].anuladas.length,
+            quienes: porJug[id].cuentan.join(', ') || '—', hayAnuladas: porJug[id].anuladas.length > 0, quienesAnuladas: porJug[id].anuladas.join(', '),
+            nota: nn.length ? (nn.reduce((s, n) => s + n.nota, 0) / nn.length).toFixed(1) : '—', nNotas: nn.length };
+        }).sort((a, b) => b.votos - a.votos || (parseFloat(b.nota) || 0) - (parseFloat(a.nota) || 0));
+        const total = votos.length, validos = votos.filter(v => !anulada('voto', jor, v.votante)).length;
+        const ganador = acta.mvp_id ? jn(acta.mvp_id) : '—';
+        const gan = resumen.find(r => r.nombre === ganador);
+        return {
+          jornada: jor, rival: acta.rival || '', ganador,
+          resumenTxt: total + ' votos emitidos · ' + validos + ' cuentan' + (total - validos ? ' · ' + (total - validos) + ' anulados' : ''),
+          aclaracion: gan ? ganador + ' recibió ' + gan.votos + ' de esos ' + validos + ' votos. Los puntos del podio salen de los votos y de las notas.' : 'Los puntos del podio salen de los votos y de las notas.',
+          resumen,
+          votos: votos.map(v => { const an = anulada('voto', jor, v.votante); return { quien:nombreDe(v.votante), a:jn(v.jugador_id), anul:an, style:'display:flex;gap:8px;align-items:center;font-size:13px;color:' + (an ? '#6D6D7A' : '#DDDDE4') + ';' + (an ? 'text-decoration:line-through' : '') }; }),
+          hayVotos: votos.length > 0
+        };
+      })(),
+      avisosRapidos: (() => {
+        if (!admin) return [];
+        const sig = (st.partidos || []).find(p => p.gf === null);
+        const ult = [...(st.actas || [])].sort((a, b) => b.jornada - a.jornada)[0];
+        const out = [];
+        if (sig) {
+          const c = this.campoDe(sig), donde = c.nombre + (sig.pista ? ' (' + sig.pista + ')' : '');
+          const cuando = diaSemana(sig.dia, sig.mes, TEMPORADA) + ' ' + sig.dia + ' de ' + sig.mes.toLowerCase() + ' a las ' + sig.hora;
+          const duelo = sig.casa ? 'Perro Sanse vs ' + sig.rival : sig.rival + ' vs Perro Sanse';
+          out.push(['📋 Convocatoria abierta', 'Convocatoria de la jornada ' + sig.num + ' abierta: confirmad en la app antes del viernes a las 20:00.']);
+          out.push(['⚽ Datos del partido', 'J' + sig.num + ': ' + duelo + '. ' + cuando + ' en ' + donde + '. Llegad 20 minutos antes.']);
+          out.push(['🔄 Cambio de hora o campo', 'Cambio en la J' + sig.num + ': ahora jugamos a las ' + sig.hora + ' en ' + donde + '. Revisad el calendario.']);
+        }
+        if (ult) {
+          const mt = this.casaDe(ult.jornada) ? 'Perro Sanse ' + ult.gf + ' - ' + ult.gc + ' ' + ult.rival : ult.rival + ' ' + ult.gc + ' - ' + ult.gf + ' Perro Sanse';
+          out.push(['🏁 Resultado', 'Resultado de la J' + ult.jornada + ': ' + mt + '. Gracias a todos.']);
+          out.push(['🏆 MVP abierto', 'Votación del MVP de la J' + ult.jornada + ' abierta: votad y puntuad a vuestros compañeros en la app.']);
+        }
+        out.push(['👕 Equipación', 'Recordad llevar la camiseta del equipo y botas adecuadas para el campo.']);
+        out.push(['💶 Pagos pendientes', 'Quedan pagos pendientes. Podéis ver lo vuestro en la pestaña Caja.']);
+        out.push(['🍻 Quedada', 'Quedada después del partido. ¿Quién se apunta?']);
+        return out.map(([label, texto]) => ({ label, texto,
+          go: async () => {
+            const fila = { fecha:hoyTexto(), autor:'Danisc', texto };
+            const creado = await this.bk.crear('avisos', fila);
+            this.setState(s => ({ avisos: [Object.assign({ id: creado ? creado.id : Date.now() }, fila)].concat(s.avisos), avisoGuardado:'Aviso añadido arriba. Edítalo si quieres y pulsa «Avisar al equipo».' }));
+          } }));
+      })(),
+      alternarBajas: () => this.setState(s => {
+        const c = s.visibilidad || VISIBLE_POR_DEFECTO;
+        const on = c.j_bajasConv !== false && c.f_bajasConv !== false && c.mister_bajasConv !== false;
+        return { visibilidad: Object.assign({}, c, { j_bajasConv:!on, f_bajasConv:!on, mister_bajasConv:!on }) };
+      }),
+      textoOjoBajas: (() => { const c = st.visibilidad || VISIBLE_POR_DEFECTO; return (c.j_bajasConv !== false && c.f_bajasConv !== false && c.mister_bajasConv !== false) ? '👁 Bajas visibles' : '🙈 Bajas ocultas'; })(),
+      estiloOjoBajas: (() => { const c = st.visibilidad || VISIBLE_POR_DEFECTO; const on = c.j_bajasConv !== false && c.f_bajasConv !== false && c.mister_bajasConv !== false;
+        return 'border-radius:999px;padding:8px 14px;cursor:pointer;font-weight:600;font-size:13px;white-space:nowrap;border:1px solid ' + (on ? '#33333D' : '#F5C518') + ';background:' + (on ? '#16161C' : '#2A1F0A') + ';color:' + (on ? '#C9C9D2' : '#F5C518'); })(),
       puedePublicarJornada: admin && st.partidos.length > 0,
       puedePublicarActa: admin && st.actas.length > 0,
       publicarConvocatoria: () => this.publicarCierre('convocatoria'),
@@ -6210,17 +6499,17 @@ class Component extends DCLogic {
           ultimos: [...st.actas].sort((a, c) => c.jornada - a.jornada).filter(a => (a.minutos || []).some(m => m.id === p.id)).slice(0, 5).map(a => {
             const m = a.minutos.find(x => x.id === p.id);
             const rs = this.marcadorDe(a.jornada, a.gf, a.gc).replace(' - ', '-');
-            return { j:'J' + a.jornada, rival: this.casaDe(a.jornada) ? 'Sanse ' + rs + ' ' + a.rival : a.rival + ' ' + rs + ' Sanse', res:'', min:m.min, nota:m.nota || 'Pend.', tarde:!!m.ultimaHora };
+            return { j:'J' + a.jornada, rival: this.casaDe(a.jornada) ? 'Sanse ' + rs + ' ' + a.rival : a.rival + ' ' + rs + ' Sanse', res:'', detalle: this.detallePartido(p, a, m), min:m.min, nota:m.nota || 'Pend.', tarde:!!m.ultimaHora };
           }),
           campos: NUMERICOS.map(([k, label]) => ({ k:label, v:p[k], set:e => this.patchJugador(p.id, { [k]:this.num(e.target.value) }) })),
-          stats: NUMERICOS.map(([k, label]) => ({ k:label, v:p[k] })).concat([{ k:'Min/PJ', v:p.pj ? Math.round(p.min / p.pj) : 0 }])
+          stats: NUMERICOS.map(([k, label]) => ({ k:label, v:p[k] })).concat([{ k:'Min/PJ', v:p.pj ? Math.round(p.min / p.pj) : 0 }]).concat((p.pos === 'POR' || this.partidosDePortero(p) > 0) ? [{ k:'🧤 Partidos de portero', v:this.partidosDePortero(p) }] : [])
         };
       })(),
 
       vistasConv: [['fotos','Con fotos'],['lista','Lista']].map(([k, label]) => ({ label, style:this.tabBtn(st.vistaConv === k), go:() => this.setState({ vistaConv:k }) })),
       convVistaFotos: st.vistaConv === 'fotos', convListaSimple: st.vistaConv === 'lista',
       textoModo: admin ? 'Toca a cada jugador para cambiar su estado' : 'Solo lectura',
-      listaConvocatoria: porDorsal(JUG).map(p => {
+      listaConvocatoria: this.filtrarConv(porDorsal(JUG).map(p => {
         const e = estadosJ[p.id] || (p.estado === 'baja' ? 'fuera' : 'pendiente');
         const col = e === 'si' ? ac : e === 'duda' ? '#2FA8A0' : e === 'pendiente' ? '#5A5A66' : '#3A3A44';
         return {
@@ -6232,7 +6521,7 @@ class Component extends DCLogic {
           pillStyle: this.pill(e === 'si' ? ac : 'transparent', e === 'si' ? '#0B0B0D' : col, col) + ';margin-top:8px',
           estadoLabel: e === 'si' ? 'Va' : e === 'duda' ? 'Duda' : e === 'fuera' ? 'Baja' : e === 'pendiente' ? 'Sin contestar' : 'No va'
         };
-      }),
+      }), this.verBajasConv()),
       convocados: conv.map(p => ({ dorsal:p.dorsal, nombre:p.nombre })),
       minutosEstimados: repartoMinutos(conv).minCampo,
       minutosPortero: repartoMinutos(conv).minPor,
@@ -6519,11 +6808,14 @@ class Component extends DCLogic {
           }; }),
         minutos: (acta.minutos.length ? acta.minutos : conv.map(p => ({ id:p.id, min:0, nota:0 }))).map((m, i) => {
           const p = JUG.find(x => x.id === m.id) || { nombre:'—' };
-          const esPortero = p.pos === 'POR';
+          const esPortero = p.pos === 'POR' || m.rolPartido === 'POR';
           const reparto = esPortero ? (encajadosPorPortero(acta, JUG)[p.id] || { ge:0 }) : null;
           const apuntado = m.ge !== undefined && m.ge !== null && m.ge !== '';
           return { nombre:p.nombre, min:m.min, nota:m.nota, tarde: !!m.ultimaHora,
             esPortero,
+            puedeSerPortero: p.pos !== 'POR',
+            alternarPortero: () => { this.patchActa(acta.id, { minutos: acta.minutos.map((x, j) => j === i ? Object.assign({}, x, { rolPartido: x.rolPartido === 'POR' ? null : 'POR' }) : x) }); setTimeout(() => this.recalcular(), 50); },
+            porteroBtnStyle: 'border-radius:8px;padding:3px 7px;cursor:pointer;font-size:13px;border:1px solid ' + (m.rolPartido === 'POR' ? '#F2841E' : '#33333D') + ';background:' + (m.rolPartido === 'POR' ? '#F2841E33' : 'transparent') + ';color:' + (m.rolPartido === 'POR' ? '#F2841E' : '#6D6D7A'),
             esBanda: p.pos === 'BAN', rolBanda: m.rolBanda || 'carrilero', notaTxt: m.nota > 0 ? m.nota : 'Pend.',
             rolStyle: 'background:#16161C;border:1px solid #2FA8A0;border-radius:8px;padding:6px 4px;color:#2FA8A0;font-size:12px;font-weight:600',
             setRolBanda: e => { const v = e.target.value; this.patchActa(acta.id, { minutos: acta.minutos.map((x, j) => j === i ? Object.assign({}, x, { rolBanda: v }) : x) }); },
@@ -6721,7 +7013,7 @@ class Component extends DCLogic {
         const colRend = rend >= 75 ? '#2FA8A0' : rend >= 50 ? '#F5C518' : rend > 0 ? '#E4572E' : '#5A5A66';
         return {
         dorsal:p.dorsal, nombre:p.nombre, pos:p.pos, pj:p.pj, min:p.min, goles:p.goles, asis:p.asis, ta:p.ta, tr:p.tr,
-        p0: p.pos === 'POR' ? p.p0 : '—', nota: p.nota || '—',
+        p0: (p.pos === 'POR' || p.p0 > 0) ? p.p0 : '—', nota: p.nota || '—',
         iniciales: p.foto ? '' : iniciales(p.nombre), avatarStyle: this.avatar(p, 26),
         posStyle: this.pill(POS_COLOR[p.pos] + '22', POS_COLOR[p.pos], POS_COLOR[p.pos]),
         flecha: fl.icono, flechaTexto: fl.texto,
@@ -6735,7 +7027,7 @@ class Component extends DCLogic {
         colGoles:'font-weight:700;color:' + COL_STAT.goles, colAsis:'font-weight:700;color:' + COL_STAT.asis,
         colTa:'font-weight:700;color:' + COL_STAT.ta, colTr:'font-weight:700;color:' + COL_STAT.tr,
         colP0:'font-weight:700;color:' + COL_STAT.p0, colGe:'font-weight:700;color:' + COL_STAT.ge,
-        ge: p.pos === 'POR' ? (p.ge || 0) : '—', colNota:'font-weight:700;color:' + COL_STAT.nota,
+        ge: (p.pos === 'POR' || p.ge > 0) ? (p.ge || 0) : '—', colNota:'font-weight:700;color:' + COL_STAT.nota,
         rowStyle:'display:grid;grid-template-columns:34px 44px minmax(150px,1.4fr) repeat(9,minmax(54px,.5fr)) 92px;min-width:1020px;padding:11px 16px;border-bottom:1px solid #17171D;align-items:center;font-size:14px;color:#C9C9D2;transition:background .2s ease,box-shadow .22s ease;--brillo:' + (POS_COLOR[p.pos] || '#FF2E88') + ';opacity:' + (p.estado === 'baja' ? '.45' : '1')
       }; }),
       golesEncajados: jugados.reduce((s, j) => s + j.gc, 0), jornadasJugadas: jugados.length,
@@ -6970,14 +7262,14 @@ class Component extends DCLogic {
         haySancion: (e.sancion || 0) > 0, sancionTxt: '-' + (e.sancion || 0),
         sancionTitulo: (e.sancion || 0) + ' puntos de sanción por no presentarse',
         inicial:this.siglaSiNoHayEscudo(e.nombre, siglaEquipo(e.nombre, TABLA_LIGA.map(x => x.nombre))), badge:this.badgeEquipo(e.nombre, e.color, 30),
-        flecha: fl.icono, flechaTexto: fl.texto,
+        abrir: () => this.setState({ equipoAbierto: e.nombre }), flecha: fl.icono, flechaTexto: fl.texto,
         flechaStyle: 'font-size:13px;text-align:center;color:' + fl.color,
         celdas: [['pj','PJ'],['g','G'],['e','E'],['p','P'],['gf','GF'],['gc','GC']].map(([k]) => ({
           v:e[k], set:ev => { const v = this.num(ev.target.value); this.setState(s => ({ clasificacion: s.clasificacion.map(x => x.nombre === e.nombre ? Object.assign({}, x, { [k]:v }) : x) })); },
           style:'width:88%;box-sizing:border-box;background:#16161C;border:1px solid #24242C;border-radius:8px;padding:5px 4px;color:' + (COL_LIGA[k] || '#EDEDF2') + ';font-size:14px;text-align:center'
         })),
         setNombre: ev => { const v = ev.target.value; this.setState(s => ({ clasificacion: s.clasificacion.map(x => x.nombre === e.nombre ? Object.assign({}, x, { nombre:v }) : x) })); },
-        rowStyle:'display:grid;grid-template-columns:44px 30px minmax(180px,2fr) repeat(7,minmax(46px,.5fr));min-width:730px;padding:12px 16px;border-bottom:1px solid #17171D;border-left:3px solid ' + zona + ';align-items:center;font-size:14px;color:#C9C9D2;transition:background .2s ease,transform .2s ease,box-shadow .22s ease;--brillo:' + e.color + ';background:' + (e.nuestro ? 'rgba(255,46,136,.10)' : 'transparent')
+        rowStyle:'display:grid;grid-template-columns:44px 30px minmax(180px,2fr) repeat(7,minmax(46px,.5fr));min-width:730px;padding:12px 16px;border-bottom:1px solid #17171D;border-left:3px solid ' + zona + ';align-items:center;font-size:14px;color:#C9C9D2;transition:background .2s ease,transform .2s ease,box-shadow .22s ease;--brillo:' + e.color + ';background:' + (e.nuestro ? 'rgba(255,46,136,.10)' : 'transparent') + ';cursor:pointer'
       }; }),
 
       vistasMvp: (esFan ? [['votacion','Jornada'],['historico','Histórico'],['ranking','Ranking']] : [['votacion','Votación'],['notas','Notas'],['historico','Histórico'],['ranking','Ranking']].concat(admin ? [['control','🔒 Control']] : [])).map(([k, label]) => ({ label, style:this.tabBtn(st.vistaMvp === k), go:() => this.setState({ vistaMvp:k }) })),
@@ -7183,7 +7475,7 @@ class Component extends DCLogic {
       })),
       historicoMvp: historico.map(h => {
         const p = JUG.find(x => x.id === h.podio[0]) || JUG[0] || {};
-        return { jornada:h.jornada, rival:h.rival, nombre:p.nombre, votos:h.votos,
+        return { abrir: () => { if (admin) this.setState({ mvpDetalle: h.jornada }); }, jornada:h.jornada, rival:h.rival, nombre:p.nombre, votos:h.votos,
           linea:p.goles + 'G · ' + p.asis + 'A', iniciales: p.foto ? '' : iniciales(p.nombre), avatarStyle:this.avatar(p, 46) };
       }),
       rankingMvp: Object.keys(acumulado).map(id => {
