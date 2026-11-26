@@ -1119,6 +1119,13 @@ export async function borrarTodo() {}
 export async function huella(t) { return String(t); }
 
 
+/** Nombre y rol de todas las cuentas, para que el míster vea quién votó cada cosa. */
+export async function nombresPerfiles() {
+  if (!sesion || sesion.rol !== 'mister') return [];
+  const { data } = await sb.from('perfiles').select('id, nombre, rol, jugador_id');
+  return data || [];
+}
+
 /* ---------- PROPUESTAS DE ALINEACIÓN ---------- */
 
 export async function listarPropuestas() {

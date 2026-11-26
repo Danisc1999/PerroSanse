@@ -2346,6 +2346,13 @@
                 </div>
               </sc-for>
             </div>
+            <sc-if value="{{ p.hayVotantes }}">
+              <div style="margin-top:12px;padding:10px 12px;background:#16161C;border:1px solid #24242C;border-radius:12px">
+                <div style="font-family:'Barlow Condensed',sans-serif;letter-spacing:.14em;font-size:11px;color:#8A8A96;text-transform:uppercase">🔒 Quién ha votado · solo tú lo ves</div>
+                <sc-if value="{{ p.hayUp }}"><div style="font-size:13px;color:#2FA8A0;margin-top:6px">👍 {{ p.textoUp }}</div></sc-if>
+                <sc-if value="{{ p.hayDown }}"><div style="font-size:13px;color:#E4404A;margin-top:4px">👎 {{ p.textoDown }}</div></sc-if>
+              </div>
+            </sc-if>
             <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">
               <sc-for list="{{ p.datos }}" as="d" hint-placeholder-count="4">
                 <div style="{{ d.style }}">{{ d.txt }}</div>
@@ -3619,8 +3626,11 @@ const TIPOS_CARTEL = [
 // 'todos', 'jugador', 'fan' o 'mister'.
 // Versión X.Y.Z: X cambios muy grandes, Y funcionalidades nuevas,
 // Z arreglos y retoques pequeños.
-const APP_VERSION = '1.9.1';
+const APP_VERSION = '1.9.2';
 const NOVEDADES = [
+  { version:'1.9.2', fecha:'26 nov 2026 · 16:58', items:[
+    { para:'mister', texto:'Alineación → Propuestas: en cada propuesta ves quién la ha votado con 👍 y quién con 👎.' }
+  ] },
   { version:'1.9.1', fecha:'24 nov 2026 · 17:08', items:[
     { para:'mister', texto:'Convocatoria: botón 👁 / 🙈 para ocultar o mostrar a los de baja a todos, incluido tú. Si quieres verlos tú y que ellos no, se hace desde Mi cuenta → Visibilidad.' }
   ] },
@@ -4228,7 +4238,12 @@ class Component extends DCLogic {
   async cargarPropuestas() {
     if (!this.bk || !this.bk.listarPropuestas) return;
     const r = await this.bk.listarPropuestas();
-    if (r && r.ok) this.setState({ propuestas: r.propuestas, votosPropuesta: r.votos });
+    if (r && r.ok) {
+      this.setState({ propuestas: r.propuestas, votosPropuesta: r.votos });
+      if (this.state.rol === 'mister' && this.bk.nombresPerfiles && !(this.state.perfilesLista || []).length) {
+        this.bk.nombresPerfiles().then(l => { if (l && l.length) this.setState({ perfilesLista: l }); });
+      }
+    }
     else if (r && r.error) this.setState({ avisoGuardado: 'No se pudieron cargar las propuestas: ' + r.error + ' (¿has creado las tablas? ver SUPABASE.md)' });
   }
 
@@ -5767,6 +5782,12 @@ class Component extends DCLogic {
       })(),
       propuestasLista: (() => {
         const grupo = st.propGrupo || 'jugador';
+        const nombreVotante = (uid) => {
+          if (uid === st.perfilId) return 'Tú';
+          const pf = (st.perfilesLista || []).find(x => x.id === uid);
+          if (pf) { const j = pf.jugador_id ? JUG.find(x => x.id === pf.jugador_id) : null; return (j ? j.nombre : (pf.nombre || 'Sin nombre')) + (pf.rol === 'fan' ? ' (fan)' : ''); }
+          return 'Usuario ' + String(uid).slice(0, 6);
+        };
         return (st.propuestas || []).filter(p => p.jornada === jornadaSel && p.rol === grupo).map(p => {
           const vs = (st.votosPropuesta || []).filter(v => v.propuesta_id === p.id);
           const up = vs.filter(v => v.valor === 1).length, down = vs.filter(v => v.valor === -1).length;
@@ -5775,6 +5796,12 @@ class Component extends DCLogic {
           const btn = (on, col) => 'border-radius:999px;padding:7px 14px;font-weight:700;font-size:14px;cursor:' + (esMia ? 'default' : 'pointer') + ';border:1px solid ' + (on ? col : '#33333D') + ';background:' + (on ? col + '33' : 'transparent') + ';color:' + (on ? col : '#C9C9D2');
           return {
             autor:p.autor, formacion:p.formacion, up, down, score:up - down, esMia, puedeVotar:!esMia,
+            hayVotantes: admin && vs.length > 0,
+            votantesUp: admin ? vs.filter(v => v.valor === 1).map(v => nombreVotante(v.votante)) : [],
+            votantesDown: admin ? vs.filter(v => v.valor === -1).map(v => nombreVotante(v.votante)) : [],
+            hayUp: admin && up > 0, hayDown: admin && down > 0,
+            textoUp: admin ? vs.filter(v => v.valor === 1).map(v => nombreVotante(v.votante)).join(', ') : '',
+            textoDown: admin ? vs.filter(v => v.valor === -1).map(v => nombreVotante(v.votante)).join(', ') : '',
             puedeBorrar: admin || esMia, puedeUsar: admin,
             upStyle: btn(mio && mio.valor === 1, '#2FA8A0'), downStyle: btn(mio && mio.valor === -1, '#E4404A'),
             campoStyle:'position:relative;aspect-ratio:3/4;max-height:340px;width:100%;margin-top:12px;border-radius:14px;overflow:hidden;border:1px solid #1F3A2C;background:repeating-linear-gradient(180deg,rgba(255,255,255,.03) 0 28px,transparent 28px 56px),linear-gradient(180deg,#0E2A1E,#0A1F16)',
